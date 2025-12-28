@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Innervation Analysis Dashboard</title>
+    <title>Innervation Ratio Analyzer</title>
     
     <link rel="stylesheet" href="https://pyscript.net/releases/2023.05.1/pyscript.css" />
     <script defer src="https://pyscript.net/releases/2023.05.1/pyscript.js"></script>
@@ -13,121 +13,99 @@
     </py-config>
 
     <style>
-        /* MAIN LAYOUT */
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f8; height: 100vh; display: flex; flex-direction: column; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; }
         
-        .navbar { background: #fff; padding: 15px 25px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; height: 50px; }
-        .navbar h1 { margin: 0; font-size: 1.2rem; color: #333; }
+        .header { text-align: center; margin-bottom: 30px; }
+        h1 { margin: 0; color: #333; }
+        .subtitle { color: #666; font-style: italic; font-size: 0.9rem; }
         
-        .dashboard { display: flex; flex: 1; height: calc(100vh - 81px); overflow: hidden; }
+        .container { max-width: 1100px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         
-        /* LEFT SIDEBAR (INPUTS) */
-        .sidebar { width: 320px; background: #fff; border-right: 1px solid #ddd; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; box-shadow: 2px 0 5px rgba(0,0,0,0.02); }
+        /* 2-Column Grid for Paired Data */
+        .grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
         
-        .card { background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .card-header { font-weight: 700; font-size: 0.95rem; color: #444; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .card { background: #fff; border: 1px solid #ddd; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .card-header { font-weight: bold; font-size: 1.1rem; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; text-align: center; }
         
-        .badge { font-size: 0.75rem; background: #eee; padding: 2px 8px; border-radius: 10px; color: #777; }
-        .badge.active { background: #e8f5e9; color: #2e7d32; }
+        .sub-group { margin-bottom: 15px; }
+        .sub-label { font-size: 0.85rem; font-weight: bold; color: #666; margin-bottom: 5px; display: flex; justify-content: space-between; }
+        
+        .badge { font-size: 0.75rem; background: #eee; padding: 2px 8px; border-radius: 10px; color: #888; }
+        .badge.active { background: #e8f5e9; color: #2e7d32; font-weight: bold; }
 
-        input[type="file"] { width: 100%; font-size: 0.8rem; margin-bottom: 8px; }
+        input[type="file"] { width: 100%; font-size: 0.8rem; margin-bottom: 5px; }
+        button { cursor: pointer; border: none; border-radius: 5px; font-weight: bold; padding: 6px; width: 100%; transition: 0.2s; font-size: 0.85rem; }
         
-        button { cursor: pointer; border: none; border-radius: 6px; font-weight: 600; padding: 8px; width: 100%; transition: 0.2s; font-size: 0.9rem; }
-        
-        .btn-add { background-color: #3498db; color: white; margin-bottom: 5px; }
+        .btn-add { background-color: #3498db; color: white; margin-bottom: 10px; }
         .btn-add:hover { background-color: #2980b9; }
         
-        .btn-clear { background-color: #fff; color: #e74c3c; border: 1px solid #eee; }
+        .btn-clear { background-color: #fff; color: #e74c3c; border: 1px solid #eee; margin-top: 10px; }
         .btn-clear:hover { background-color: #ffebee; }
 
-        .btn-main { background-color: #2c3e50; color: white; padding: 15px; font-size: 1rem; margin-top: auto; }
-        .btn-main:hover { background-color: #1a252f; }
+        .btn-run { background-color: #2c3e50; color: white; padding: 15px; font-size: 1.1rem; width: 100%; }
+        .btn-run:hover { background-color: #1a252f; }
 
-        /* RIGHT CONTENT (GRAPH) */
-        .content { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        #plot-area { min-height: 500px; display: flex; justify-content: center; align-items: center; border: 2px dashed #eee; margin-top: 30px; }
+        #stats-area { background: #222; color: #0f0; font-family: monospace; padding: 15px; margin-top: 20px; border-radius: 5px; display: none; white-space: pre-wrap; }
         
-        /* Settings Bar */
-        .settings-bar { background: #fff; width: 100%; max-width: 900px; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; align-items: end; border: 1px solid #ddd; }
-        .setting-group { flex: 1; }
-        .setting-group label { display: block; font-size: 0.8rem; font-weight: bold; color: #666; margin-bottom: 5px; }
-        .setting-group input, .setting-group select { width: 95%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        
-        /* Graph Area */
-        #plot-area { background: #fff; width: 100%; max-width: 900px; min-height: 500px; border-radius: 8px; border: 1px solid #ddd; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-        
-        #stats-area { background: #222; color: #0f0; font-family: monospace; width: 100%; max-width: 870px; padding: 15px; border-radius: 8px; margin-top: 20px; display: none; white-space: pre-wrap; }
-
-        /* System Status */
-        #status-bar { font-size: 0.8rem; color: #666; display: flex; align-items: center; gap: 8px; }
-        .dot { width: 8px; height: 8px; background: orange; border-radius: 50%; }
-        .dot.ready { background: #2ecc71; }
-
+        #console { margin-top: 20px; font-family: monospace; font-size: 0.8rem; color: #888; border-top: 1px solid #ddd; padding-top: 10px; max-height: 100px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
-<div class="navbar">
-    <h1>Innervation Analyzer</h1>
-    <div id="status-bar">
-        <div id="sys-dot" class="dot"></div>
-        <span id="sys-msg">Loading Python...</span>
-    </div>
+<div class="header">
+    <h1>Innervation Ratio Analyzer</h1>
+    <div class="subtitle">Calculates (Left / Right) Ratio per mouse → Averages Ratios → Stats</div>
+    <div style="font-size:0.8rem; color:green; margin-top:5px;" id="sys-status">Loading Python...</div>
 </div>
 
-<div class="dashboard">
+<div class="container">
     
-    <div class="sidebar">
-        
+    <div class="grid-row">
         <div class="card">
-            <div class="card-header">1. Control (Right) <span id="bdg-ctrl" class="badge">0</span></div>
-            <input type="file" id="file-ctrl" multiple>
-            <button id="btn-add-ctrl" class="btn-add">+ Add Files</button>
-            <button id="btn-clr-ctrl" class="btn-clear">Clear</button>
+            <div class="card-header">1. CFA Mice</div>
+            
+            <div class="sub-group">
+                <div class="sub-label">Left Paws (Injected) <span id="bdg_CFA_L" class="badge">0</span></div>
+                <input type="file" id="in_CFA_L" multiple>
+                <button class="btn-add" id="btn-add-cfa-l">+ Add Left</button>
+            </div>
+            
+            <div class="sub-group">
+                <div class="sub-label">Right Paws (Control) <span id="bdg_CFA_R" class="badge">0</span></div>
+                <input type="file" id="in_CFA_R" multiple>
+                <button class="btn-add" id="btn-add-cfa-r">+ Add Right</button>
+            </div>
+            
+            <button class="btn-clear" id="btn-clr-cfa">Clear CFA Data</button>
+            <div style="font-size:0.75rem; color:#888; text-align:center; margin-top:5px;">Ensure file order matches (1st Left with 1st Right)</div>
         </div>
 
         <div class="card">
-            <div class="card-header">2. CFA (Left) <span id="bdg-cfa" class="badge">0</span></div>
-            <input type="file" id="file-cfa" multiple>
-            <button id="btn-add-cfa" class="btn-add">+ Add Files</button>
-            <button id="btn-clr-cfa" class="btn-clear">Clear</button>
+            <div class="card-header">2. Carrageenan Mice</div>
+            
+            <div class="sub-group">
+                <div class="sub-label">Left Paws (Injected) <span id="bdg_Carr_L" class="badge">0</span></div>
+                <input type="file" id="in_Carr_L" multiple>
+                <button class="btn-add" id="btn-add-carr-l">+ Add Left</button>
+            </div>
+            
+            <div class="sub-group">
+                <div class="sub-label">Right Paws (Control) <span id="bdg_Carr_R" class="badge">0</span></div>
+                <input type="file" id="in_Carr_R" multiple>
+                <button class="btn-add" id="btn-add-carr-r">+ Add Right</button>
+            </div>
+            
+            <button class="btn-clear" id="btn-clr-carr">Clear Carr Data</button>
+            <div style="font-size:0.75rem; color:#888; text-align:center; margin-top:5px;">Ensure file order matches (1st Left with 1st Right)</div>
         </div>
-
-        <div class="card">
-            <div class="card-header">3. Carrageenan (Left) <span id="bdg-carr" class="badge">0</span></div>
-            <input type="file" id="file-carr" multiple>
-            <button id="btn-add-carr" class="btn-add">+ Add Files</button>
-            <button id="btn-clr-carr" class="btn-clear">Clear</button>
-        </div>
-
-        <button id="btn-run" class="btn-main" disabled>UPDATE GRAPH</button>
     </div>
 
-    <div class="content">
-        
-        <div class="settings-bar">
-            <div class="setting-group">
-                <label>Graph Title</label>
-                <input type="text" id="in-title" value="Footpad Innervation Analysis">
-            </div>
-            <div class="setting-group">
-                <label>Y-Axis Label</label>
-                <input type="text" id="in-ylabel" value="Innervation Index">
-            </div>
-            <div class="setting-group">
-                <label>Graph Style</label>
-                <select id="in-style">
-                    <option value="bar">Bar Chart</option>
-                    <option value="box">Box Plot</option>
-                </select>
-            </div>
-        </div>
-
-        <div id="plot-area">
-            <div style="color:#aaa; font-style:italic;">Add files on the left and click Update Graph</div>
-        </div>
-
-        <div id="stats-area"></div>
-    </div>
+    <button id="btn-run" class="btn-run">CALCULATE RATIOS & GRAPH</button>
+    
+    <div id="plot-area">Graph will appear here...</div>
+    <div id="stats-area"></div>
+    <div id="console">System Log...</div>
 
 </div>
 
@@ -141,22 +119,36 @@ from pyodide.ffi import create_proxy
 import asyncio
 
 # --- DATA STORE ---
-STORE = {"Control": [], "CFA": [], "Carr": []}
+# We store raw values separately for L and R
+STORE = {
+    "CFA_L": [], "CFA_R": [],
+    "Carr_L": [], "Carr_R": []
+}
 
-# --- 1. DATA HANDLING ---
-async def add_files(group_key, input_id, badge_id):
+def log(msg):
+    c = document.getElementById("console")
+    c.innerHTML += f"<br>> {msg}"
+    c.scrollTop = c.scrollHeight
+
+def set_ready():
+    document.getElementById("sys-status").innerText = "System Ready"
+
+set_ready()
+
+# --- FILE HANDLING ---
+async def add_files(key, input_id, badge_id):
     inp = document.getElementById(input_id)
     files = inp.files
-    
     if files.length == 0:
-        alert("Please select files first!")
+        alert("Select files first!")
         return
 
+    count = 0
     for i in range(files.length):
         f = files.item(i)
         text = await f.text()
         
-        # Robust Parse
+        # Parse
         clean = text.replace(',', ' ').replace('\t', ' ')
         tokens = clean.split()
         nums = []
@@ -165,109 +157,74 @@ async def add_files(group_key, input_id, badge_id):
             except: pass
         
         if nums:
-            STORE[group_key].append(np.mean(nums))
-    
-    # Update UI
+            STORE[key].append(np.mean(nums))
+            count += 1
+            
+    # Update Badge
     bdg = document.getElementById(badge_id)
-    bdg.innerText = f"{len(STORE[group_key])}"
+    bdg.innerText = f"{len(STORE[key])}"
     bdg.classList.add("active")
-    inp.value = "" 
+    inp.value = ""
+    log(f"Added {count} files to {key}")
 
-def clear_group(group_key, badge_id):
-    STORE[group_key] = []
-    bdg = document.getElementById(badge_id)
-    bdg.innerText = "0"
-    bdg.classList.remove("active")
+def clear_cfa(e):
+    STORE["CFA_L"] = []
+    STORE["CFA_R"] = []
+    document.getElementById("bdg_CFA_L").innerText = "0"
+    document.getElementById("bdg_CFA_R").innerText = "0"
+    log("Cleared CFA")
 
-# --- 2. ANALYSIS & PLOTTING ---
-def run_analysis(event):
-    c = STORE["Control"]
-    cfa = STORE["CFA"]
-    carr = STORE["Carr"]
+def clear_carr(e):
+    STORE["Carr_L"] = []
+    STORE["Carr_R"] = []
+    document.getElementById("bdg_Carr_L").innerText = "0"
+    document.getElementById("bdg_Carr_R").innerText = "0"
+    log("Cleared Carr")
+
+# --- ANALYSIS ---
+def run_analysis(e):
+    # 1. Validate Pairing
+    if len(STORE["CFA_L"]) != len(STORE["CFA_R"]):
+        alert(f"Mismatch in CFA Group!\nLeft Files: {len(STORE['CFA_L'])}\nRight Files: {len(STORE['CFA_R'])}\nPlease clear and re-upload matched pairs.")
+        return
+    if len(STORE["Carr_L"]) != len(STORE["Carr_R"]):
+        alert(f"Mismatch in Carr Group!\nLeft Files: {len(STORE['Carr_L'])}\nRight Files: {len(STORE['Carr_R'])}\nPlease clear and re-upload matched pairs.")
+        return
     
-    if not (c and cfa and carr):
-        alert("Missing Data! Please add files for all 3 groups.")
+    if len(STORE["CFA_L"]) == 0 or len(STORE["Carr_L"]) == 0:
+        alert("Missing Data. Please add files.")
         return
 
-    dataset = [c, cfa, carr]
-    names = ["Control", "CFA", "Carrageenan"]
+    # 2. Calculate Ratios
+    # Ratio = Left / Right
+    try:
+        ratios_cfa = [ l/r for l,r in zip(STORE["CFA_L"], STORE["CFA_R"]) ]
+        ratios_carr = [ l/r for l,r in zip(STORE["Carr_L"], STORE["Carr_R"]) ]
+    except ZeroDivisionError:
+        alert("Error: One of your Right Paw files has a value of 0. Cannot divide by zero.")
+        return
+
+    dataset = [ratios_cfa, ratios_carr]
+    names = ["CFA", "Carrageenan"]
+
+    # 3. Plot
+    fig, ax = plt.subplots(figsize=(7, 6))
     
-    # Get User Settings
-    title_text = document.getElementById("in-title").value
-    ylabel_text = document.getElementById("in-ylabel").value
-    plot_style = document.getElementById("in-style").value
-    
-    # Setup Plot
-    fig, ax = plt.subplots(figsize=(9, 6))
-    colors = ['lightgray', 'firebrick', 'orange']
-    edge_colors = ['black', 'darkred', 'darkorange']
-    
-    if plot_style == "bar":
-        means = [np.mean(d) for d in dataset]
-        sems = [stats.sem(d) if len(d)>1 else 0 for d in dataset]
-        ax.bar(names, means, yerr=sems, capsize=8, color=colors, edgecolor='black', alpha=0.9)
-    else:
-        # Box Plot
-        bplot = ax.boxplot(dataset, labels=names, patch_artist=True)
-        for patch, color in zip(bplot['boxes'], colors):
-            patch.set_facecolor(color)
-            patch.set_edgecolor('black')
-    
-    # Scatter Points (Individual Mice)
+    # COLORS: Light Blue (#ADD8E6) and Grey (#D3D3D3)
+    colors = ['#87CEEB', '#D3D3D3'] 
+    edge_colors = ['#4682B4', '#A9A9A9']
+
+    means = [np.mean(d) for d in dataset]
+    sems = [stats.sem(d) if len(d)>1 else 0 for d in dataset]
+
+    # Bars
+    ax.bar(names, means, yerr=sems, capsize=8, color=colors, edgecolor=edge_colors, linewidth=1.5, alpha=0.9, width=0.6)
+
+    # Scatter (Individual Ratios)
     for i, d in enumerate(dataset):
-        # Adjust x-pos based on plot type (Bar uses 0,1,2 - Box uses 1,2,3)
-        x_pos = i if plot_style == "bar" else i + 1
-        x = np.random.normal(x_pos, 0.04, size=len(d))
-        ax.scatter(x, d, color='black', alpha=0.6, s=40, zorder=3)
-        
-    # Styling
+        x = np.random.normal(i, 0.04, size=len(d))
+        ax.scatter(x, d, color='black', alpha=0.6, s=50, zorder=3)
+
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.set_ylabel(ylabel_text, fontsize=12, fontweight='bold')
-    ax.set_title(title_text, fontsize=14, fontweight='bold')
-    
-    # Render
-    document.getElementById("plot-area").innerHTML = ""
-    display(fig, target="plot-area", append=False)
-    
-    # Stats
-    f, p = stats.f_oneway(*dataset)
-    div = document.getElementById("stats-area")
-    div.style.display = "block"
-    res = "SIGNIFICANT *" if p < 0.05 else "ns"
-    div.innerText = f"One-Way ANOVA P-Value: {p:.5f}\nResult: {res}"
-
-# --- 3. EVENT BINDING (Wrapper Functions) ---
-
-async def on_add_ctrl(e): await add_files("Control", "file-ctrl", "bdg-ctrl")
-async def on_add_cfa(e): await add_files("CFA", "file-cfa", "bdg-cfa")
-async def on_add_carr(e): await add_files("Carr", "file-carr", "bdg-carr")
-
-def on_clr_ctrl(e): clear_group("Control", "bdg-ctrl")
-def on_clr_cfa(e): clear_group("CFA", "bdg-cfa")
-def on_clr_carr(e): clear_group("Carr", "bdg-carr")
-
-def main():
-    # Bind Buttons
-    document.getElementById("btn-add-ctrl").addEventListener("click", create_proxy(on_add_ctrl))
-    document.getElementById("btn-add-cfa").addEventListener("click", create_proxy(on_add_cfa))
-    document.getElementById("btn-add-carr").addEventListener("click", create_proxy(on_add_carr))
-
-    document.getElementById("btn-clr-ctrl").addEventListener("click", create_proxy(on_clr_ctrl))
-    document.getElementById("btn-clr-cfa").addEventListener("click", create_proxy(on_clr_cfa))
-    document.getElementById("btn-clr-carr").addEventListener("click", create_proxy(on_clr_carr))
-
-    # Enable Main Button
-    run_btn = document.getElementById("btn-run")
-    run_btn.addEventListener("click", create_proxy(run_analysis))
-    run_btn.disabled = False
-    
-    # Set Status
-    document.getElementById("sys-dot").classList.add("ready")
-    document.getElementById("sys-msg").innerText = "System Ready"
-
-main()
-</py-script>
-
-</body>
-</html>
+    ax.set_ylabel("Innervation Ratio (Left/Right)", fontsize=12, fontweight

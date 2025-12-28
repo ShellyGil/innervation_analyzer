@@ -16,116 +16,87 @@
         :root { --primary: #2c3e50; --accent: #3498db; --bg: #f8f9fa; }
         body { font-family: 'Segoe UI', Helvetica, sans-serif; margin: 0; padding: 0; background-color: var(--bg); height: 100vh; display: flex; flex-direction: column; }
         
-        /* Navbar */
-        .navbar { background: var(--primary); color: white; padding: 15px 25px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
-        .navbar h1 { margin: 0; font-size: 1.2rem; font-weight: 600; }
-        .navbar .status { font-size: 0.9rem; opacity: 0.8; }
-
-        /* Main Layout */
+        .navbar { background: var(--primary); color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { margin: 0; font-size: 1.2rem; }
+        
         .main-container { display: flex; flex: 1; height: calc(100vh - 60px); overflow: hidden; }
         
-        /* LEFT PANEL (Data) */
+        /* LEFT PANEL */
         .left-panel { width: 350px; background: white; border-right: 1px solid #ddd; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
-        .panel-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        
-        .group-card { background: #fdfdfd; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; transition: 0.2s; }
-        .group-card:hover { border-color: var(--accent); }
-        .group-header { font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between; font-size: 0.95rem; }
+        .group-card { background: #fdfdfd; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+        .group-header { font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between; }
         .badge { background: #eee; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; color: #666; }
         .badge.active { background: #e8f5e9; color: #2e7d32; }
         
-        .file-controls { display: flex; gap: 5px; margin-top: 10px; }
-        input[type="file"] { font-size: 0.8rem; width: 100%; margin-bottom: 5px; }
+        input[type="file"] { width: 100%; margin-bottom: 10px; font-size: 0.8rem; }
         
-        button { cursor: pointer; border: none; border-radius: 4px; padding: 6px 12px; font-size: 0.85rem; font-weight: 600; transition: 0.2s; }
-        .btn-add { background: var(--accent); color: white; flex: 1; }
+        button { cursor: pointer; border: none; border-radius: 4px; padding: 8px 12px; font-weight: bold; transition: 0.2s; }
+        .btn-add { background: var(--accent); color: white; width: 100%; margin-bottom: 5px; }
         .btn-add:hover { background: #2980b9; }
-        .btn-add:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .btn-clear { background: #ffebee; color: #c62828; width: 100%; }
         
-        .btn-clear { background: #ffebee; color: #c62828; }
-        .btn-clear:hover { background: #ffcdd2; }
-
-        /* RIGHT PANEL (Graph & Settings) */
+        /* RIGHT PANEL */
         .right-panel { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
         
-        /* Plot Area */
-        #plot-container { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; min-height: 400px; width: 100%; max-width: 800px; display: flex; justify-content: center; align-items: center; }
+        #plot-container { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; min-height: 450px; width: 100%; max-width: 800px; display: flex; justify-content: center; align-items: center; }
         
-        /* Customization Bar */
-        .settings-bar { background: white; border-radius: 8px; padding: 15px 25px; width: 100%; max-width: 800px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: end; }
-        
-        .setting-group { display: flex; flex-direction: column; }
-        .setting-group label { font-size: 0.8rem; font-weight: bold; color: #666; margin-bottom: 5px; }
-        .setting-group input, .setting-group select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; }
+        .settings-bar { background: white; border-radius: 8px; padding: 15px; width: 100%; max-width: 800px; display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+        .setting-group label { font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 5px; }
+        .setting-group input, .setting-group select { width: 90%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
         
         .btn-update { background: var(--primary); color: white; height: 38px; padding: 0 25px; }
-        .btn-update:hover { background: #34495e; }
 
-        #stats-panel { width: 100%; max-width: 800px; background: white; border-radius: 8px; padding: 20px; margin-top: 20px; font-family: monospace; border-left: 5px solid var(--accent); display: none; }
+        /* DEBUG CONSOLE */
+        #console-log { width: 100%; max-width: 800px; background: #333; color: #0f0; font-family: monospace; padding: 10px; border-radius: 5px; margin-top: 20px; height: 100px; overflow-y: scroll; font-size: 0.85rem; display: none; }
+        .error-msg { color: #ff5252; }
 
-        /* Loading Overlay */
-        #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 1000; text-align: center; padding-top: 20%; font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+        /* LOADING */
+        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div id="loader">Processing...</div>
+<div id="loader">
+    <div class="spinner"></div>
+    <div id="loading-text">Loading Python Environment...<br>(This takes ~10s the first time)</div>
+</div>
 
 <div class="navbar">
     <h1>Innervation Analyzer</h1>
-    <div class="status">v4.0 Professional</div>
+    <div style="font-size: 0.8rem; opacity: 0.8;">v5.0 Stable</div>
 </div>
 
 <div class="main-container">
-    
     <div class="left-panel">
-        <div class="panel-title">1. Upload Data</div>
+        <h3>1. Upload Data</h3>
 
         <div class="group-card">
-            <div class="group-header">
-                Control (Right)
-                <span id="badge_Control" class="badge">0 Loaded</span>
-            </div>
+            <div class="group-header">Control (Right) <span id="badge_Control" class="badge">0 Loaded</span></div>
             <input type="file" id="file_Control" multiple>
-            <div class="file-controls">
-                <button id="btn_add_Control" class="btn-add" py-click="add_files('Control')">+ Add Files</button>
-                <button class="btn-clear" py-click="clear_group('Control')">Clear</button>
-            </div>
+            <button id="btn_Control" class="btn-add" py-click="add_files('Control')">+ Add Files</button>
+            <button class="btn-clear" py-click="clear_group('Control')">Clear</button>
         </div>
 
         <div class="group-card">
-            <div class="group-header">
-                CFA (Left)
-                <span id="badge_CFA" class="badge">0 Loaded</span>
-            </div>
+            <div class="group-header">CFA (Left) <span id="badge_CFA" class="badge">0 Loaded</span></div>
             <input type="file" id="file_CFA" multiple>
-            <div class="file-controls">
-                <button id="btn_add_CFA" class="btn-add" py-click="add_files('CFA')">+ Add Files</button>
-                <button class="btn-clear" py-click="clear_group('CFA')">Clear</button>
-            </div>
+            <button id="btn_CFA" class="btn-add" py-click="add_files('CFA')">+ Add Files</button>
+            <button class="btn-clear" py-click="clear_group('CFA')">Clear</button>
         </div>
 
         <div class="group-card">
-            <div class="group-header">
-                Carrageenan (Left)
-                <span id="badge_Carrageenan" class="badge">0 Loaded</span>
-            </div>
+            <div class="group-header">Carr. (Left) <span id="badge_Carrageenan" class="badge">0 Loaded</span></div>
             <input type="file" id="file_Carrageenan" multiple>
-            <div class="file-controls">
-                <button id="btn_add_Carrageenan" class="btn-add" py-click="add_files('Carrageenan')">+ Add Files</button>
-                <button class="btn-clear" py-click="clear_group('Carrageenan')">Clear</button>
-            </div>
-        </div>
-
-        <div style="margin-top: 20px; font-size: 0.85rem; color: #888; text-align: center;">
-            Tip: You can add files in batches.<br>Statistics update automatically.
+            <button id="btn_Carrageenan" class="btn-add" py-click="add_files('Carrageenan')">+ Add Files</button>
+            <button class="btn-clear" py-click="clear_group('Carrageenan')">Clear</button>
         </div>
     </div>
 
     <div class="right-panel">
-        
         <div id="plot-container">
-            <div style="color:#aaa; font-style:italic;">Upload data and click "Update Graph" to begin.</div>
+            <div style="color:#999; font-style:italic;">Graph will appear here...</div>
         </div>
 
         <div class="settings-bar">
@@ -140,15 +111,15 @@
             <div class="setting-group">
                 <label>Style</label>
                 <select id="input_style">
-                    <option value="bar">Bar Chart with Dots</option>
-                    <option value="box">Box Plot with Dots</option>
+                    <option value="bar">Bar Chart</option>
+                    <option value="box">Box Plot</option>
                 </select>
             </div>
             <button class="btn-update" py-click="generate_plot">Update Graph</button>
         </div>
 
-        <div id="stats-panel"></div>
-
+        <div id="console-log">System Ready.</div>
+        <div id="stats-panel" style="margin-top:20px; font-family:monospace; width:100%; max-width:800px;"></div>
     </div>
 </div>
 
@@ -161,182 +132,124 @@ import js
 from js import document
 import asyncio
 
-# --- GLOBAL STORE ---
-DATA = {
-    "Control": [],
-    "CFA": [],
-    "Carrageenan": []
-}
+# Global Data Store
+DATA = {"Control": [], "CFA": [], "Carrageenan": []}
 
-# --- 1. FILE UPLOAD LOGIC ---
+def log(msg, error=False):
+    """Prints to the on-screen black console."""
+    console = document.getElementById("console-log")
+    console.style.display = "block"
+    color = "#ff5252" if error else "#0f0"
+    console.innerHTML += f"<div style='color:{color}'> > {msg}</div>"
+    console.scrollTop = console.scrollHeight
+
 async def add_files(group_key):
-    # UI Feedback: Change button text
-    btn = document.getElementById(f"btn_add_{group_key}")
-    original_text = btn.innerText
-    btn.innerText = "Reading..."
-    btn.disabled = True
-    
     try:
-        # Get input element
+        log(f"Reading files for {group_key}...")
         inp = document.getElementById(f"file_{group_key}")
         files = inp.files
         
         if files.length == 0:
-            js.alert("Please select files first.")
-            reset_btn(btn, original_text)
+            js.alert("Please select files first!")
             return
 
-        added_count = 0
-        
-        # Loop through files
+        count = 0
         for i in range(files.length):
             f = files.item(i)
-            # AWAIT the text content (Crucial Step)
             text = await f.text()
             
             # Robust Parsing
-            # 1. Replace commas with spaces
-            # 2. Split by any whitespace
-            # 3. Look for the last number
-            clean_text = text.replace(',', ' ')
-            tokens = clean_text.split()
-            
+            clean = text.replace(',', ' ').replace('\t', ' ')
+            tokens = clean.split()
             nums = []
             for t in tokens:
-                try:
-                    nums.append(float(t))
-                except:
-                    pass
+                try: nums.append(float(t))
+                except: pass
             
             if nums:
-                # If file has multiple numbers, we take the mean (Standard for this type of data)
-                # If file is "Name 5.5", nums is [5.5], mean is 5.5
+                # Take mean if multiple numbers found in one file
                 DATA[group_key].append(np.mean(nums))
-                added_count += 1
+                count += 1
         
-        # Update Badge
-        update_badge(group_key)
+        log(f"Successfully added {count} files to {group_key}.")
         
-        # Clear input to allow re-upload
-        inp.value = ""
+        # Update UI
+        badge = document.getElementById(f"badge_{group_key}")
+        badge.innerText = f"{len(DATA[group_key])} Loaded"
+        badge.classList.add("active")
+        inp.value = "" # Clear input
         
     except Exception as e:
-        js.alert(f"Error reading files: {str(e)}")
-    
-    reset_btn(btn, original_text)
-
-def reset_btn(btn, text):
-    btn.innerText = text
-    btn.disabled = False
+        log(f"ERROR: {str(e)}", error=True)
+        js.alert(f"Error: {str(e)}")
 
 def clear_group(group_key):
     DATA[group_key] = []
-    update_badge(group_key)
-
-def update_badge(group_key):
-    count = len(DATA[group_key])
     badge = document.getElementById(f"badge_{group_key}")
-    badge.innerText = f"{count} Loaded"
-    if count > 0:
-        badge.classList.add("active")
-    else:
-        badge.classList.remove("active")
+    badge.innerText = "0 Loaded"
+    badge.classList.remove("active")
+    log(f"Cleared {group_key}.")
 
-
-# --- 2. PLOTTING LOGIC ---
 def generate_plot(*args):
-    # Show Loader
-    loader = document.getElementById("loader")
-    loader.style.display = "block"
-    
     try:
-        # Validate Data
-        c_data = DATA["Control"]
-        cfa_data = DATA["CFA"]
-        carr_data = DATA["Carrageenan"]
+        log("Generating Plot...")
+        # Check Data
+        c = DATA["Control"]
+        cfa = DATA["CFA"]
+        carr = DATA["Carrageenan"]
         
-        if not (c_data and cfa_data and carr_data):
-            js.alert("Missing Data! Please upload files for all 3 groups.")
-            loader.style.display = "none"
+        if not (c and cfa and carr):
+            js.alert("Missing Data! Please upload for all groups.")
             return
 
+        dataset = [c, cfa, carr]
+        names = ["Control", "CFA", "Carrageenan"]
+        
         # Get Settings
-        title_text = document.getElementById("input_title").value
-        ylabel_text = document.getElementById("input_ylabel").value
-        style_mode = document.getElementById("input_style").value
+        title = document.getElementById("input_title").value
+        ylabel = document.getElementById("input_ylabel").value
+        style = document.getElementById("input_style").value
         
-        # Prepare Data
-        dataset = [c_data, cfa_data, carr_data]
-        group_names = ["Control", "CFA", "Carrageenan"]
-        
-        # Plotting
-        fig, ax = plt.subplots(figsize=(7, 5))
-        
+        # Plot
+        fig, ax = plt.subplots(figsize=(8, 5))
         colors = ['#E0E0E0', '#FFCDD2', '#BBDEFB']
-        edge_colors = ['#424242', '#D32F2F', '#1976D2']
+        edges = ['#424242', '#D32F2F', '#1976D2']
         
-        if style_mode == "bar":
+        if style == "bar":
             means = [np.mean(d) for d in dataset]
             sems = [stats.sem(d) if len(d)>1 else 0 for d in dataset]
-            
-            ax.bar(group_names, means, yerr=sems, capsize=0, 
-                   color=colors, edgecolor=edge_colors, linewidth=2, width=0.6)
-            # Error bars
-            ax.errorbar(group_names, means, yerr=sems, fmt='none', ecolor='black', elinewidth=2, capsize=5)
-            
-        elif style_mode == "box":
-            bplot = ax.boxplot(dataset, patch_artist=True, labels=group_names, widths=0.5)
-            # Color the boxes
-            for patch, color, edge in zip(bplot['boxes'], colors, edge_colors):
+            ax.bar(names, means, yerr=sems, capsize=5, color=colors, edgecolor=edges)
+        else:
+            bplot = ax.boxplot(dataset, labels=names, patch_artist=True)
+            for patch, color in zip(bplot['boxes'], colors):
                 patch.set_facecolor(color)
-                patch.set_edgecolor(edge)
-                patch.set_linewidth(2)
-            for median in bplot['medians']:
-                median.set(color='black', linewidth=1.5)
-
-        # Scatter Points (Individual Mice)
+        
+        # Scatter
         for i, d in enumerate(dataset):
-            # i+1 for boxplot x-axis alignment if needed, but here we can just map indices
-            # Boxplot uses 1,2,3... Bar uses 0,1,2...
-            # Matplotlib Bar: 0, 1, 2
-            # Matplotlib Box: 1, 2, 3 usually? Let's check positions.
-            # Fixed: We will use explicit positions.
+            x_base = i if style == "bar" else i+1
+            x = np.random.normal(x_base, 0.04, size=len(d))
+            ax.scatter(x, d, color='black', zorder=3, alpha=0.7)
             
-            x_center = i if style_mode == "bar" else i + 1
-            x = np.random.normal(x_center, 0.04, size=len(d))
-            ax.scatter(x, d, color='black', alpha=0.7, s=40, zorder=3, edgecolors='white')
-
-        # Formatting
+        ax.set_title(title)
+        ax.set_ylabel(ylabel)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.set_ylabel(ylabel_text, fontsize=12, fontweight='bold')
-        ax.set_title(title_text, fontsize=14, fontweight='bold', pad=15)
         
-        # STATS
-        f_stat, p_anova = stats.f_oneway(*dataset)
-        
-        # Display Plot
+        # Display
         document.getElementById("plot-container").innerHTML = ""
         display(fig, target="plot-container", append=False)
         
-        # Display Stats Text
+        # Stats
+        f, p = stats.f_oneway(*dataset)
         stats_div = document.getElementById("stats-panel")
-        stats_div.style.display = "block"
-        
-        stats_html = f"<strong>ONE-WAY ANOVA</strong><br>"
-        stats_html += f"P-Value: {p_anova:.5f} "
-        if p_anova < 0.05:
-            stats_html += "<span style='color:red; font-weight:bold'>(Significant *)</span>"
-        else:
-            stats_html += "<span style='color:grey'>(Not Significant)</span>"
-            
-        stats_div.innerHTML = stats_html
+        stats_div.innerHTML = f"<strong>ANOVA Results:</strong> P-Value = {p:.5f} " + ("(Sig*)" if p<0.05 else "(ns)")
+        log("Plot Updated.")
 
     except Exception as e:
-        js.alert(f"Plot Error: {str(e)}")
+        log(f"PLOT ERROR: {str(e)}", error=True)
 
-    loader.style.display = "none"
-
+# Hide Loader when Python is ready
+document.getElementById("loader").style.display = "none"
 </py-script>
 
 </body>

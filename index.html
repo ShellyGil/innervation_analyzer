@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Innervation Analysis</title>
+    <title>Innervation Analysis (Robust)</title>
     
     <link rel="stylesheet" href="https://pyscript.net/releases/2023.05.1/pyscript.css" />
     <script defer src="https://pyscript.net/releases/2023.05.1/pyscript.js"></script>
@@ -13,89 +13,95 @@
     </py-config>
 
     <style>
-        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; max-width: 1000px; margin: 0 auto; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; max-width: 1100px; margin: 0 auto; }
         
-        /* HEADER */
-        .header { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .status-dot { height: 12px; width: 12px; background-color: #f1c40f; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .status-text { font-weight: bold; color: #f1c40f; font-family: monospace; }
-        
-        /* COLUMNS */
-        .row { display: flex; gap: 20px; }
-        .col-left { width: 35%; }
-        .col-right { width: 65%; }
+        /* Layout */
+        .container { display: flex; gap: 20px; }
+        .panel-left { width: 350px; flex-shrink: 0; }
+        .panel-right { flex-grow: 1; }
 
-        /* CARDS */
-        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        .card h3 { margin-top: 0; font-size: 1rem; color: #333; border-bottom: 2px solid #eee; padding-bottom: 5px; }
-        
-        /* CONTROLS */
-        input[type="file"] { width: 100%; font-size: 0.8rem; margin-bottom: 8px; }
-        button { cursor: pointer; padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; }
-        
-        .btn-add { background: #3498db; color: white; width: 100%; }
-        .btn-add:hover { background: #2980b9; }
-        
-        .btn-clear { background: #ffebee; color: #c62828; margin-top: 5px; width: 100%; }
-        
-        .btn-run { background: #2ecc71; color: white; font-size: 1.1rem; padding: 12px; width: 100%; margin-top: 10px; }
-        .btn-run:hover { background: #27ae60; }
+        /* Cards */
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card h3 { margin: 0 0 15px 0; font-size: 1rem; color: #444; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; display: flex; justify-content: space-between; }
 
-        /* BADGES */
-        .badge { float: right; font-size: 0.8rem; background: #eee; padding: 2px 6px; border-radius: 4px; color: #777; }
+        /* Status Badge */
+        .badge { background: #eee; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; color: #888; }
         .badge.active { background: #e8f5e9; color: #2e7d32; font-weight: bold; }
 
-        /* OUTPUT */
-        #plot-target { background: white; min-height: 400px; border-radius: 8px; display: flex; justify-content: center; align-items: center; border: 2px dashed #ddd; }
-        #stats-target { margin-top: 15px; padding: 15px; background: #333; color: #0f0; font-family: monospace; border-radius: 8px; display: none; white-space: pre-wrap; }
+        /* Controls */
+        input[type="file"] { width: 100%; margin-bottom: 10px; font-size: 0.9rem; }
         
-        /* CONSOLE */
-        #sys-log { margin-top: 20px; font-size: 0.8rem; color: #888; border-top: 1px solid #ddd; padding-top: 10px; }
+        button { width: 100%; padding: 10px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-bottom: 5px; }
+        button:disabled { background-color: #ccc !important; cursor: not-allowed; color: #666 !important; }
+
+        .btn-add { background-color: #3498db; color: white; }
+        .btn-add:hover { background-color: #2980b9; }
+        
+        .btn-clear { background-color: #ffebee; color: #d32f2f; }
+        .btn-clear:hover { background-color: #ffcdd2; }
+
+        .btn-run { background-color: #2ecc71; color: white; font-size: 1.1rem; padding: 15px; margin-top: 10px; }
+        .btn-run:hover { background-color: #27ae60; }
+
+        /* Status Bar */
+        #status-bar { background: #333; color: white; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; font-family: monospace; display: flex; align-items: center; gap: 10px; }
+        .dot { height: 10px; width: 10px; background-color: #f1c40f; border-radius: 50%; display: inline-block; }
+        .dot.ready { background-color: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+
+        /* Output Areas */
+        #plot-area { background: white; border-radius: 10px; min-height: 500px; display: flex; justify-content: center; align-items: center; border: 2px dashed #e0e0e0; }
+        #stats-area { background: #333; color: #0f0; font-family: monospace; padding: 15px; border-radius: 8px; margin-top: 20px; white-space: pre-wrap; display: none; }
+        
+        /* Log */
+        #log-area { font-family: monospace; font-size: 0.8rem; color: #666; height: 100px; overflow-y: auto; border-top: 1px solid #ddd; margin-top: 10px; padding-top: 5px; }
+        .log-entry { margin-bottom: 2px; }
+        .err { color: red; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <div style="font-size: 1.2rem; font-weight: bold;">Innervation Dashboard</div>
-    <div>
-        <span id="status-dot" class="status-dot"></span>
-        <span id="status-text" class="status-text">Loading Python...</span>
-    </div>
+<div id="status-bar">
+    <div id="sys-dot" class="dot"></div>
+    <div id="sys-status">Initializing Python Environment... (Please Wait)</div>
 </div>
 
-<div class="row">
-    <div class="col-left">
+<div class="container">
+    <div class="panel-left">
+        
         <div class="card">
-            <h3>Control (Right) <span id="bdg_Control" class="badge">0 Loaded</span></h3>
-            <input type="file" id="in_Control" multiple>
-            <button id="btn_Control" class="btn-add" py-click="add_files('Control')">+ Add Files</button>
-            <button class="btn-clear" py-click="clear_group('Control')">Clear</button>
+            <h3>Control (Right) <span id="bdg-ctrl" class="badge">0 Loaded</span></h3>
+            <input type="file" id="file-ctrl" multiple>
+            <button id="btn-add-ctrl" class="btn-add" disabled>+ Add Files</button>
+            <button id="btn-clr-ctrl" class="btn-clear" disabled>Clear</button>
         </div>
 
         <div class="card">
-            <h3>CFA (Left) <span id="bdg_CFA" class="badge">0 Loaded</span></h3>
-            <input type="file" id="in_CFA" multiple>
-            <button id="btn_CFA" class="btn-add" py-click="add_files('CFA')">+ Add Files</button>
-            <button class="btn-clear" py-click="clear_group('CFA')">Clear</button>
+            <h3>CFA (Left) <span id="bdg-cfa" class="badge">0 Loaded</span></h3>
+            <input type="file" id="file-cfa" multiple>
+            <button id="btn-add-cfa" class="btn-add" disabled>+ Add Files</button>
+            <button id="btn-clr-cfa" class="btn-clear" disabled>Clear</button>
         </div>
 
         <div class="card">
-            <h3>Carrageenan (Left) <span id="bdg_Carr" class="badge">0 Loaded</span></h3>
-            <input type="file" id="in_Carr" multiple>
-            <button id="btn_Carr" class="btn-add" py-click="add_files('Carr')">+ Add Files</button>
-            <button class="btn-clear" py-click="clear_group('Carr')">Clear</button>
+            <h3>Carrageenan (Left) <span id="bdg-carr" class="badge">0 Loaded</span></h3>
+            <input type="file" id="file-carr" multiple>
+            <button id="btn-add-carr" class="btn-add" disabled>+ Add Files</button>
+            <button id="btn-clr-carr" class="btn-clear" disabled>Clear</button>
         </div>
 
-        <button id="btn_generate" class="btn-run" py-click="run_analysis()">GENERATE GRAPH</button>
-        <div id="sys-log">System initializing...</div>
+        <button id="btn-run" class="btn-run" disabled>GENERATE GRAPH</button>
+        
+        <div class="card" style="margin-top:20px;">
+            <h3>System Log</h3>
+            <div id="log-area"></div>
+        </div>
     </div>
 
-    <div class="col-right">
-        <div class="card">
-            <h3>Result</h3>
-            <div id="plot-target">Graph will appear here...</div>
-            <div id="stats-target"></div>
+    <div class="panel-right">
+        <div id="plot-area">
+            <div style="color:#aaa; font-style:italic;">Graph will appear here...</div>
         </div>
+        <div id="stats-area"></div>
     </div>
 </div>
 
@@ -104,38 +110,43 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats
-import js
-from js import document
+from js import document, window, alert
+from pyodide.ffi import create_proxy
 import asyncio
 
-# --- GLOBAL STORE ---
+# --- LOGGING UTILS ---
+def log(msg, error=False):
+    div = document.getElementById("log-area")
+    color = "red" if error else "#333"
+    div.innerHTML += f"<div class='log-entry' style='color:{color}'> > {msg}</div>"
+    div.scrollTop = div.scrollHeight
+
+# --- GLOBAL DATA STORE ---
 STORE = {"Control": [], "CFA": [], "Carr": []}
 
-def log(msg):
-    log_div = document.getElementById("sys-log")
-    log_div.innerText = f"> {msg}"
+# --- EVENT HANDLERS (Manual Binding) ---
 
-# --- SYSTEM READY INDICATOR ---
-def set_ready():
-    dot = document.getElementById("status-dot")
-    txt = document.getElementById("status-text")
-    dot.style.backgroundColor = "#2ecc71"
-    txt.innerText = "System Ready"
-    txt.style.color = "#2ecc71"
-    log("Python loaded. Ready for data.")
+async def handle_add_ctrl(event): await add_files("Control", "file-ctrl", "bdg-ctrl")
+async def handle_add_cfa(event): await add_files("CFA", "file-cfa", "bdg-cfa")
+async def handle_add_carr(event): await add_files("Carr", "file-carr", "bdg-carr")
 
-# Call immediately
-set_ready()
+def handle_clr_ctrl(event): clear_group("Control", "bdg-ctrl")
+def handle_clr_cfa(event): clear_group("CFA", "bdg-cfa")
+def handle_clr_carr(event): clear_group("Carr", "bdg-carr")
 
-# --- FILE HANDLER ---
-async def add_files(group):
+def handle_run(event): run_analysis()
+
+# --- CORE LOGIC ---
+
+async def add_files(group_key, input_id, badge_id):
     try:
-        log(f"Reading {group}...")
-        inp = document.getElementById(f"in_{group}")
+        log(f"Processing {group_key}...")
+        inp = document.getElementById(input_id)
         files = inp.files
         
         if files.length == 0:
-            js.alert("Select files first.")
+            log("No files selected.", error=True)
+            window.alert("Please select files first.")
             return
 
         count = 0
@@ -143,7 +154,7 @@ async def add_files(group):
             f = files.item(i)
             text = await f.text()
             
-            # Robust Parse
+            # Parsing Logic
             clean = text.replace(',', ' ').replace('\t', ' ')
             tokens = clean.split()
             nums = []
@@ -152,44 +163,44 @@ async def add_files(group):
                 except: pass
             
             if nums:
-                STORE[group].append(np.mean(nums))
+                # If multiple numbers, take mean (assumes file = 1 mouse)
+                STORE[group_key].append(np.mean(nums))
                 count += 1
         
         # Update Badge
-        bdg = document.getElementById(f"bdg_{group}")
-        bdg.innerText = f"{len(STORE[group])} Loaded"
+        bdg = document.getElementById(badge_id)
+        bdg.innerText = f"{len(STORE[group_key])} Loaded"
         bdg.classList.add("active")
         
-        inp.value = "" # Clear input
-        log(f"Added {count} files to {group}.")
+        inp.value = "" # Reset input
+        log(f"Successfully added {count} files to {group_key}.")
         
     except Exception as e:
-        js.alert(f"Error: {e}")
+        log(f"Error: {e}", error=True)
 
-def clear_group(group):
-    STORE[group] = []
-    bdg = document.getElementById(f"bdg_{group}")
+def clear_group(group_key, badge_id):
+    STORE[group_key] = []
+    bdg = document.getElementById(badge_id)
     bdg.innerText = "0 Loaded"
     bdg.classList.remove("active")
-    log(f"Cleared {group}.")
+    log(f"Cleared {group_key}.")
 
-# --- PLOT HANDLER ---
-def run_analysis(*args):
+def run_analysis():
     try:
-        log("Generating...")
+        log("Running Analysis...")
         c = STORE["Control"]
         cfa = STORE["CFA"]
         carr = STORE["Carr"]
         
         if not (c and cfa and carr):
-            js.alert("Missing data. Add files for all groups.")
+            window.alert("Missing Data. Please add files for all groups.")
             return
-            
+
         dataset = [c, cfa, carr]
         names = ["Control", "CFA", "Carrageenan"]
         
         # Plot
-        fig, ax = plt.subplots(figsize=(6, 5))
+        fig, ax = plt.subplots(figsize=(7, 6))
         colors = ['#E0E0E0', '#FFCDD2', '#BBDEFB']
         edges = ['#424242', '#D32F2F', '#1976D2']
         
@@ -198,6 +209,7 @@ def run_analysis(*args):
         
         ax.bar(names, means, yerr=sems, capsize=5, color=colors, edgecolor=edges)
         
+        # Scatter
         for i, d in enumerate(dataset):
             x = np.random.normal(i, 0.04, size=len(d))
             ax.scatter(x, d, color='black', alpha=0.7, zorder=3)
@@ -205,23 +217,52 @@ def run_analysis(*args):
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.set_ylabel("Innervation Index")
-        ax.set_title("Analysis Results")
+        ax.set_title("Analysis Result")
         
-        # Display Plot
-        document.getElementById("plot-target").innerHTML = ""
-        display(fig, target="plot-target", append=False)
+        document.getElementById("plot-area").innerHTML = ""
+        display(fig, target="plot-area", append=False)
         
-        # Display Stats
+        # Stats
         f, p = stats.f_oneway(*dataset)
-        s_div = document.getElementById("stats-target")
+        s_div = document.getElementById("stats-area")
         s_div.style.display = "block"
-        s_div.innerText = f"ANOVA P-Value: {p:.5f}\n" + ("(Significant *)" if p < 0.05 else "(Not Significant)")
+        res = "SIGNIFICANT *" if p < 0.05 else "Not Significant (ns)"
+        s_div.innerText = f"ANOVA P-Value: {p:.5f}\nResult: {res}"
         
-        log("Done.")
+        log("Graph Generated Successfully.")
         
     except Exception as e:
-        js.alert(f"Plot Error: {e}")
+        log(f"Plot Error: {e}", error=True)
+
+# --- INITIALIZATION ---
+def setup():
+    # Bind events manually using Python
+    # This ensures connections are made only when Python is ready
+    
+    document.getElementById("btn-add-ctrl").onclick = create_proxy(handle_add_ctrl)
+    document.getElementById("btn-add-cfa").onclick = create_proxy(handle_add_cfa)
+    document.getElementById("btn-add-carr").onclick = create_proxy(handle_add_carr)
+    
+    document.getElementById("btn-clr-ctrl").onclick = create_proxy(handle_clr_ctrl)
+    document.getElementById("btn-clr-cfa").onclick = create_proxy(handle_clr_cfa)
+    document.getElementById("btn-clr-carr").onclick = create_proxy(handle_clr_carr)
+    
+    document.getElementById("btn-run").onclick = create_proxy(handle_run)
+    
+    # Enable Buttons
+    btns = document.getElementsByTagName("button")
+    for b in btns:
+        b.disabled = False
+        
+    # Update Status
+    document.getElementById("sys-dot").classList.add("ready")
+    document.getElementById("sys-status").innerText = "System Ready. Please upload files."
+    log("System Initialized.")
+
+# Run Setup
+setup()
 
 </py-script>
+
 </body>
 </html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Innervation Analysis Tool</title>
+    
+    <link rel="stylesheet" href="https://pyscript.net/releases/2023.05.1/pyscript.css" />
+    <script defer src="https://pyscript.net/releases/2023.05.1/pyscript.js"></script>
+    
+    <py-config>
+        packages = ["pandas", "matplotlib", "scipy"]
+    </py-config>
+
+    <style>
+        body { font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; }
+        .input-group { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #fafafa; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        button { background-color: #000; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; }
+        button:hover { background-color: #333; }
+        #plot-area { margin-top: 30px; text-align: center; }
+        .loading { color: #888; font-style: italic; text-align: center; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Innervation Analysis Project</h1>
+    <p style="text-align: center; color: #666;">Upload your text files to generate a publication-quality figure.</p>
+
+    <div class="input-group">
+        <label>1. Control (Right Feet)</label>
+        <input type="file" id="files_control" multiple>
+    </div>
+
+    <div class="input-group">
+        <label>2. CFA (Left Feet)</label>
+        <input type="file" id="files_cfa" multiple>
+    </div>
+
+    <div class="input-group">
+        <label>3. Carrageenan (Left Feet)</label>
+        <input type="file" id="files_carr" multiple>
+    </div>
+
+    <button id="run_btn" py-click="run_analysis">Generate Figure & Stats</button>
+    
+    <div id="loading_msg" class="loading">Processing... please wait...</div>
+    <div id="plot-area"></div>
+    <div id="stats-area" style="white-space: pre-wrap; margin-top: 20px; font-family: monospace; background: #eee; padding: 10px; display: none;"></div>
+</div>
+
+<py-script>
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+import js
+from js import document
+import asyncio
+
+# --- HELPER: Read Uploaded Files ---
+async def read_files_from_input(element_id):
+    """Reads numbers from all text files in a specific input field."""
+    file_list = document.getElementById(element_id).files
+    values = []
+    
+    # PyScript Proxy for iterating files
+    for i in range(file_list.length):
+        file = file_list.item(i)
+        text = await file.text() # Async read
+        
+        # Parse numbers
+        lines = text.split('\n')
+        file_vals = []
+        for line in lines:
+            parts = line.strip().split()
+            if parts:
+                try:
+                    file_vals.append(float(parts[-1]))
+                except ValueError:
+                    continue
+        if file_vals:
+            values.append(np.mean(file_vals)) # Mean of that mouse
+            
+    return values
+
+# --- MAIN ANALYSIS FUNCTION ---
+async def run_analysis(*args):
+    # Show loading
+    document.getElementById("loading_msg").style.display = "block"
+    document.getElementById("plot-area").innerHTML = ""
+    
+    try:
+        # 1. Load Data
+        data_control = await read_files_from_input("files_control")
+        data_cfa = await read_files_from_input("files_cfa")
+        data_carr = await read_files_from_input("files_carr")
+
+        if not (data_control and data_cfa and data_carr):
+            js.alert("Please upload files for ALL three groups.")
+            document.getElementById("loading_msg").style.display = "none"
+            return
+
+        groups = {"Control": data_control, "CFA": data_cfa, "Carrageenan": data_carr}
+        group_names = ["Control", "CFA", "Carrageenan"]
+
+        # 2. Stats (ANOVA)
+        f_stat, p_anova = stats.f_oneway(data_control, data_cfa, data_carr)
+
+        # 3. Plotting
+        fig, ax = plt.subplots(figsize=(6, 5))
+        
+        means = [np.mean(groups[n]) for n in group_names]
+        sems = [stats.sem(groups[n]) for n in group_names]
+        
+        # Style
+        colors = ['#E0E0E0', '#FFCDD2', '#BBDEFB']
+        edges = ['#424242', '#D32F2F', '#1976D2']
+        
+        ax.bar(group_names, means, yerr=sems, capsize=0, 
+               color=colors, edgecolor=edges, linewidth=2, width=0.6)
+        
+        ax.errorbar(group_names, means, yerr=sems, fmt='none', ecolor='black', elinewidth=2, capsize=5)
+
+        # Scatter
+        for i, name in enumerate(group_names):
+            vals = groups[name]
+            x = np.random.normal(i, 0.04, size=len(vals))
+            ax.scatter(x, vals, color='black', alpha=0.7, s=40, zorder=3, edgecolors='white')
+
+        # Clean Plot
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.set_ylabel("Innervation Index", fontsize=12, fontweight='bold')
+        ax.set_title("Footpad Innervation Results", fontsize=14, fontweight='bold')
+
+        # 4. Display Plot
+        display(fig, target="plot-area", append=False)
+        
+        # 5. Show Stats
+        stats_text = f"--- RESULTS ---\n"
+        stats_text += f"One-way ANOVA P-Value: {p_anova:.5f}\n"
+        if p_anova < 0.05:
+            stats_text += "Significant difference detected (*)"
+        else:
+            stats_text += "No significant difference (ns)"
+            
+        stats_div = document.getElementById("stats-area")
+        stats_div.innerHTML = stats_text
+        stats_div.style.display = "block"
+
+    except Exception as e:
+        js.alert(f"Error: {str(e)}")
+    
+    document.getElementById("loading_msg").style.display = "none"
+
+</py-script>
+
+</body>
+</html>

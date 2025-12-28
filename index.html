@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Innervation Analysis (Append Mode)</title>
+    <title>Innervation Analysis (Robust Mode)</title>
     
     <link rel="stylesheet" href="https://pyscript.net/releases/2023.05.1/pyscript.css" />
     <script defer src="https://pyscript.net/releases/2023.05.1/pyscript.js"></script>
@@ -13,68 +13,76 @@
     </py-config>
 
     <style>
-        body { font-family: 'Arial', sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; }
         .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h1 { color: #333; text-align: center; margin-bottom: 5px; }
         .subtitle { text-align: center; color: #666; font-style: italic; margin-bottom: 30px; }
         
         /* Group Box Styling */
         .group-box { margin-bottom: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; display: flex; align-items: center; justify-content: space-between; }
-        .group-title { font-weight: bold; font-size: 1.1em; width: 200px; }
-        .file-input { flex-grow: 1; margin: 0 10px; }
+        .group-title { font-weight: bold; font-size: 1.1em; width: 180px; }
+        .file-input { flex-grow: 1; margin: 0 10px; padding: 5px; }
         
         /* Buttons */
-        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 5px; }
-        .btn-add { background-color: #2196F3; color: white; }
+        button { cursor: pointer; border: none; border-radius: 4px; font-weight: bold; padding: 8px 15px; transition: 0.2s; }
+        .btn-add { background-color: #2196F3; color: white; margin-left: 5px; }
         .btn-add:hover { background-color: #1976D2; }
-        .btn-clear { background-color: #ffebee; color: #c62828; }
+        .btn-add:active { background-color: #0d47a1; }
+        
+        .btn-clear { background-color: #ffebee; color: #c62828; margin-left: 5px; }
         .btn-clear:hover { background-color: #ffcdd2; }
-        .btn-run { background-color: #000; color: white; padding: 15px; width: 100%; font-size: 18px; margin-top: 20px; }
-        .btn-run:hover { background-color: #333; }
+
+        .btn-run { background-color: #2e7d32; color: white; padding: 15px; width: 100%; font-size: 18px; margin-top: 20px; }
+        .btn-run:hover { background-color: #1b5e20; }
 
         /* Status Text */
-        .status-tag { font-weight: bold; color: #c62828; width: 120px; text-align: right; }
+        .status-tag { font-weight: bold; color: #999; width: 120px; text-align: right; }
         .status-tag.active { color: #2e7d32; }
 
         #plot-area { margin-top: 30px; text-align: center; }
-        .loading { text-align: center; color: #888; display: none; margin-top: 10px;}
+        
+        /* Debug Console */
+        .console-box { background: #222; color: #0f0; font-family: monospace; padding: 10px; margin-top: 20px; border-radius: 5px; height: 150px; overflow-y: scroll; font-size: 0.9em; }
+        .console-title { font-size: 0.8em; color: #888; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>Innervation Analysis Project</h1>
-    <p class="subtitle">Append Mode: Add files from multiple folders easily.</p>
+    <p class="subtitle">Upload files in batches. The log below will confirm your data.</p>
 
     <div class="group-box">
         <div class="group-title">1. Control (Right)</div>
         <input type="file" id="in_control" class="file-input" multiple>
-        <button class="btn btn-add" py-click="add_files('Control', 'in_control', 'lbl_control')">+ Add</button>
+        <button id="btn_control" class="btn btn-add" py-click="add_files('Control', 'in_control', 'lbl_control')">+ Add</button>
         <button class="btn btn-clear" py-click="clear_group('Control', 'lbl_control')">Clear</button>
-        <div id="lbl_control" class="status-tag">0 loaded</div>
+        <div id="lbl_control" class="status-tag">0 mice loaded</div>
     </div>
 
     <div class="group-box">
         <div class="group-title">2. CFA (Left)</div>
         <input type="file" id="in_cfa" class="file-input" multiple>
-        <button class="btn btn-add" py-click="add_files('CFA', 'in_cfa', 'lbl_cfa')">+ Add</button>
+        <button id="btn_cfa" class="btn btn-add" py-click="add_files('CFA', 'in_cfa', 'lbl_cfa')">+ Add</button>
         <button class="btn btn-clear" py-click="clear_group('CFA', 'lbl_cfa')">Clear</button>
-        <div id="lbl_cfa" class="status-tag">0 loaded</div>
+        <div id="lbl_cfa" class="status-tag">0 mice loaded</div>
     </div>
 
     <div class="group-box">
         <div class="group-title">3. Carrageenan (Left)</div>
         <input type="file" id="in_carr" class="file-input" multiple>
-        <button class="btn btn-add" py-click="add_files('Carrageenan', 'in_carr', 'lbl_carr')">+ Add</button>
+        <button id="btn_carr" class="btn btn-add" py-click="add_files('Carrageenan', 'in_carr', 'lbl_carr')">+ Add</button>
         <button class="btn btn-clear" py-click="clear_group('Carrageenan', 'lbl_carr')">Clear</button>
-        <div id="lbl_carr" class="status-tag">0 loaded</div>
+        <div id="lbl_carr" class="status-tag">0 mice loaded</div>
     </div>
 
-    <button class="btn btn-run" py-click="run_analysis">GENERATE FIGURE</button>
+    <button class="btn btn-run" py-click="run_analysis">GENERATE FIGURE & STATS</button>
     
-    <div id="loading_msg" class="loading">Processing... please wait...</div>
     <div id="plot-area"></div>
     <div id="stats-area" style="white-space: pre-wrap; margin-top: 20px; font-family: monospace; background: #eee; padding: 10px; display: none;"></div>
+
+    <div class="console-title">System Log (Check here for errors):</div>
+    <div id="log-box" class="console-box">System Ready...</div>
 </div>
 
 <py-script>
@@ -84,68 +92,108 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import js
 from js import document
+import asyncio
 
 # --- GLOBAL STORAGE ---
-# This dictionary keeps the data even if you change inputs
 DATA_STORE = {
     "Control": [],
     "CFA": [],
     "Carrageenan": []
 }
 
-async def add_files(group_name, input_id, label_id):
-    """Reads selected files and APPENDS them to the global store."""
-    file_list = document.getElementById(input_id).files
-    
-    if file_list.length == 0:
-        return
+def log(msg):
+    """Prints message to the black box on screen."""
+    box = document.getElementById("log-box")
+    box.innerHTML += f"<div>> {msg}</div>"
+    box.scrollTop = box.scrollHeight
 
-    added_count = 0
-    
-    # Iterate through files
-    for i in range(file_list.length):
-        file = file_list.item(i)
-        text = await file.text()
+async def add_files(group_name, input_id, label_id):
+    """Robust file reader that handles errors."""
+    try:
+        log(f"Attempting to add files to {group_name}...")
         
-        # Parse Logic
-        lines = text.split('\n')
-        vals = []
-        for line in lines:
-            parts = line.strip().split()
-            if parts:
+        file_input = document.getElementById(input_id)
+        file_list = file_input.files
+        
+        if file_list.length == 0:
+            log("ERROR: No files selected. Please select files first.")
+            js.alert("Please select files before clicking Add.")
+            return
+
+        added_count = 0
+        
+        # Iterate through files
+        for i in range(file_list.length):
+            file = file_list.item(i)
+            # log(f"Reading: {file.name}")
+            
+            # Async read
+            text = await file.text()
+            
+            # Robust Parsing: Replace commas with spaces, split by whitespace
+            clean_text = text.replace(',', ' ')
+            parts = clean_text.split()
+            
+            # Find numbers
+            vals = []
+            for p in parts:
                 try:
-                    vals.append(float(parts[-1]))
+                    # Logic: In your files, the number is usually at the END.
+                    # But if the file is JUST numbers, this also works.
+                    # We try to convert everything, if it works, we keep it.
+                    vals.append(float(p))
                 except ValueError:
                     continue
-        
-        if vals:
-            # Append mean of this file (Mouse) to the list
-            DATA_STORE[group_name].append(np.mean(vals))
-            added_count += 1
+            
+            if vals:
+                # If the file had text (e.g. "Image.tif 5.5"), we assume the last number is the value
+                # Or if it was a list of numbers, we take the mean.
+                # Your format: "filename 5.5". Last value is the one.
+                final_val = vals[-1]
+                
+                # However, if the user uploaded a file with a LIST of numbers (like the first example),
+                # we should probably take the mean of all numbers found?
+                # Let's stick to the mean of all numbers found in the file to be safe.
+                mean_val = np.mean(vals)
+                
+                DATA_STORE[group_name].append(mean_val)
+                added_count += 1
+            else:
+                log(f"WARNING: No valid numbers found in {file.name}")
 
-    # Update UI
-    update_label(group_name, label_id)
-    
-    # Clear Input so user can add more unique files
-    document.getElementById(input_id).value = ""
+        log(f"SUCCESS: Added {added_count} mice to {group_name}.")
+        
+        # Update UI
+        update_label(group_name, label_id)
+        
+        # Clear Input so user can add more
+        file_input.value = ""
+        
+    except Exception as e:
+        log(f"CRITICAL ERROR: {str(e)}")
+        js.alert(f"Error adding files: {str(e)}")
 
 def clear_group(group_name, label_id):
     DATA_STORE[group_name] = []
     update_label(group_name, label_id)
+    log(f"Cleared data for {group_name}.")
 
 def update_label(group_name, label_id):
     count = len(DATA_STORE[group_name])
     lbl = document.getElementById(label_id)
-    lbl.innerText = f"{count} loaded"
+    lbl.innerText = f"{count} mice loaded"
     
     if count > 0:
         lbl.classList.add("active")
+        lbl.style.color = "#2e7d32"
     else:
         lbl.classList.remove("active")
+        lbl.style.color = "#999"
 
 def run_analysis(*args):
-    document.getElementById("loading_msg").style.display = "block"
+    log("Starting Analysis...")
     document.getElementById("plot-area").innerHTML = ""
+    document.getElementById("stats-area").style.display = "none"
     
     try:
         # Check Data
@@ -153,16 +201,25 @@ def run_analysis(*args):
         cfa_data = DATA_STORE["CFA"]
         carr_data = DATA_STORE["Carrageenan"]
 
+        total_mice = len(c_data) + len(cfa_data) + len(carr_data)
+        log(f"Data Check: Control={len(c_data)}, CFA={len(cfa_data)}, Carr={len(carr_data)}")
+
         if not (c_data and cfa_data and carr_data):
-            js.alert("Missing Data! Please add at least 1 file for each group.")
-            document.getElementById("loading_msg").style.display = "none"
+            js.alert("Missing Data! Please ensure every group has at least 1 mouse.")
+            log("Analysis Failed: Missing Data.")
             return
 
-        group_names = ["Control", "CFA", "Carrageenan"]
         dataset = [c_data, cfa_data, carr_data]
+        group_names = ["Control", "CFA", "Carrageenan"]
         
         # Stats
-        f_stat, p_anova = stats.f_oneway(*dataset)
+        try:
+            f_stat, p_anova = stats.f_oneway(*dataset)
+            log(f"ANOVA Calculated. P={p_anova}")
+        except Exception as e:
+            log(f"Stats Error: {e}")
+            js.alert("Could not run statistics. Do you have enough data?")
+            return
 
         # Plotting
         fig, ax = plt.subplots(figsize=(6, 5))
@@ -170,6 +227,7 @@ def run_analysis(*args):
         means = [np.mean(d) for d in dataset]
         sems = [stats.sem(d) if len(d)>1 else 0 for d in dataset]
         
+        # Prism Style Colors
         colors = ['#E0E0E0', '#FFCDD2', '#BBDEFB']
         edges = ['#424242', '#D32F2F', '#1976D2']
         
@@ -190,19 +248,19 @@ def run_analysis(*args):
         display(fig, target="plot-area", append=False)
         
         # Stats Output
-        res_text = f"--- STATISTICS ---\n"
-        res_text += f"Total Mice: {sum(len(x) for x in dataset)}\n"
+        res_text = f"--- STATISTICAL REPORT ---\n"
+        res_text += f"Total Mice Analyzed: {total_mice}\n"
         res_text += f"One-way ANOVA P-Value: {p_anova:.5f}\n"
-        res_text += "Significant" if p_anova < 0.05 else "Not Significant"
+        res_text += ">> SIGNIFICANT DIFFERENCE FOUND *" if p_anova < 0.05 else ">> NO SIGNIFICANT DIFFERENCE (ns)"
         
         s_div = document.getElementById("stats-area")
         s_div.innerText = res_text
         s_div.style.display = "block"
+        log("Analysis Complete.")
 
     except Exception as e:
-        js.alert(f"Error: {str(e)}")
-    
-    document.getElementById("loading_msg").style.display = "none"
+        log(f"CRASH: {str(e)}")
+        js.alert(f"Crash: {str(e)}")
 
 </py-script>
 

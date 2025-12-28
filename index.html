@@ -17,26 +17,23 @@
         
         .header { text-align: center; margin-bottom: 30px; }
         h1 { margin: 0; color: #333; }
-        .subtitle { color: #666; font-style: italic; }
-
-        /* Full Width Container */
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-
+        
         /* Grid Layout */
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .grid-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px; }
         
-        /* Input Cards */
+        /* Cards */
         .card { background: #fafafa; border: 1px solid #ddd; padding: 20px; border-radius: 8px; }
         .card-title { font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; display: flex; justify-content: space-between; }
         
-        /* Badge */
+        /* Badges */
         .badge { background: #eee; font-size: 0.8rem; padding: 2px 8px; border-radius: 10px; color: #888; }
         .badge.active { background: #e8f5e9; color: #2e7d32; font-weight: bold; }
 
-        /* Controls */
+        /* Inputs & Buttons */
         input[type="file"] { width: 100%; margin-bottom: 10px; font-size: 0.9rem; }
         
-        button { cursor: pointer; border: none; border-radius: 5px; font-weight: bold; padding: 8px 15px; width: 100%; transition: 0.2s; margin-top: 5px; }
+        button { cursor: pointer; border: none; border-radius: 5px; font-weight: bold; padding: 10px 15px; width: 100%; transition: 0.2s; margin-top: 5px; }
         
         .btn-add { background-color: #2196F3; color: white; }
         .btn-add:hover { background-color: #1976D2; }
@@ -47,61 +44,55 @@
         .btn-run { background-color: #000; color: white; padding: 15px; font-size: 1.1rem; margin-top: 10px; }
         .btn-run:hover { background-color: #333; }
 
-        /* Results Area */
+        /* Output */
         #plot-area { text-align: center; min-height: 500px; display: flex; justify-content: center; align-items: center; border: 2px dashed #eee; margin-top: 20px; }
-        
         #stats-area { background: #222; color: #0f0; font-family: monospace; padding: 15px; margin-top: 20px; border-radius: 5px; display: none; white-space: pre-wrap; }
-
-        /* System Status */
-        #sys-status { position: fixed; bottom: 10px; right: 10px; background: white; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; }
-        .dot { height: 8px; width: 8px; background-color: #f1c40f; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        
+        /* Debug Console */
+        #console { margin-top: 20px; padding: 10px; border-top: 1px solid #ddd; color: #666; font-size: 0.8rem; max-height: 100px; overflow-y: auto; font-family: monospace; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <h1>Innervation Analysis Project</h1>
-    <div class="subtitle">Upload files to generate statistics and figures</div>
+    <div style="color: #666; font-style: italic;">Status: <span id="sys-status" style="color: orange; font-weight: bold;">Loading Python...</span></div>
 </div>
 
 <div class="container">
     
     <div class="grid-row">
-        
         <div class="card">
             <div class="card-title">1. Control (Right) <span id="bdg_Control" class="badge">0 Loaded</span></div>
             <input type="file" id="in_Control" multiple>
-            <button id="btn_Control" class="btn-add" py-click="add_files('Control')">+ Add Files</button>
-            <button class="btn-clear" py-click="clear_group('Control')">Clear</button>
+            <button class="btn-add" py-click="add_control">+ Add Files</button>
+            <button class="btn-clear" py-click="clear_control">Clear</button>
         </div>
 
         <div class="card">
             <div class="card-title">2. CFA (Left) <span id="bdg_CFA" class="badge">0 Loaded</span></div>
             <input type="file" id="in_CFA" multiple>
-            <button id="btn_CFA" class="btn-add" py-click="add_files('CFA')">+ Add Files</button>
-            <button class="btn-clear" py-click="clear_group('CFA')">Clear</button>
+            <button class="btn-add" py-click="add_cfa">+ Add Files</button>
+            <button class="btn-clear" py-click="clear_cfa">Clear</button>
         </div>
 
         <div class="card">
             <div class="card-title">3. Carrageenan (Left) <span id="bdg_Carr" class="badge">0 Loaded</span></div>
             <input type="file" id="in_Carr" multiple>
-            <button id="btn_Carr" class="btn-add" py-click="add_files('Carr')">+ Add Files</button>
-            <button class="btn-clear" py-click="clear_group('Carr')">Clear</button>
+            <button class="btn-add" py-click="add_carr">+ Add Files</button>
+            <button class="btn-clear" py-click="clear_carr">Clear</button>
         </div>
     </div>
 
-    <button id="btn_run" class="btn-run" py-click="run_analysis()">GENERATE FIGURE & STATS</button>
+    <button class="btn-run" py-click="run_analysis">GENERATE FIGURE & STATS</button>
     
     <div id="plot-area">
         <div style="color:#aaa; font-style:italic;">Graph will appear here...</div>
     </div>
     <div id="stats-area"></div>
+    
+    <div id="console">System Log initialized...</div>
 
-</div>
-
-<div id="sys-status">
-    <span id="status-dot" class="dot"></span>
-    <span id="status-text">Initializing Python...</span>
 </div>
 
 <py-script>
@@ -116,23 +107,38 @@ import asyncio
 # --- GLOBAL STORE ---
 STORE = {"Control": [], "CFA": [], "Carr": []}
 
-def set_ready():
-    """Updates the little status bubble in bottom right."""
-    dot = document.getElementById("status-dot")
-    txt = document.getElementById("status-text")
-    dot.style.backgroundColor = "#2ecc71"
-    txt.innerText = "System Ready"
+def log(msg):
+    c = document.getElementById("console")
+    c.innerHTML += f"<br>> {msg}"
+    c.scrollTop = c.scrollHeight
 
-# Call immediately to show python is loaded
+def set_ready():
+    s = document.getElementById("sys-status")
+    s.innerText = "System Ready"
+    s.style.color = "green"
+    log("Python Environment Loaded.")
+
 set_ready()
 
-async def add_files(group):
+# --- SPECIFIC WRAPPER FUNCTIONS (Prevents HTML Quote Crashes) ---
+async def add_control(*args): await process_files("Control", "in_Control", "bdg_Control")
+async def add_cfa(*args): await process_files("CFA", "in_CFA", "bdg_CFA")
+async def add_carr(*args): await process_files("Carr", "in_Carr", "bdg_Carr")
+
+def clear_control(*args): do_clear("Control", "bdg_Control")
+def clear_cfa(*args): do_clear("CFA", "bdg_CFA")
+def clear_carr(*args): do_clear("Carr", "bdg_Carr")
+
+
+# --- CORE LOGIC ---
+async def process_files(group_key, input_id, badge_id):
     try:
-        inp = document.getElementById(f"in_{group}")
+        log(f"Button clicked for {group_key}...")
+        inp = document.getElementById(input_id)
         files = inp.files
         
         if files.length == 0:
-            js.alert("Please select files first.")
+            js.alert("Please choose a file first!")
             return
 
         count = 0
@@ -140,7 +146,7 @@ async def add_files(group):
             f = files.item(i)
             text = await f.text()
             
-            # Robust Parsing (Handles newlines, tabs, spaces, commas)
+            # Parsing Logic
             clean = text.replace(',', ' ').replace('\t', ' ')
             tokens = clean.split()
             nums = []
@@ -149,54 +155,51 @@ async def add_files(group):
                 except: pass
             
             if nums:
-                # Take mean if multiple numbers found in one file
-                STORE[group].append(np.mean(nums))
+                STORE[group_key].append(np.mean(nums))
                 count += 1
         
-        # Update Badge
-        bdg = document.getElementById(f"bdg_{group}")
-        bdg.innerText = f"{len(STORE[group])} Loaded"
+        # Update UI
+        bdg = document.getElementById(badge_id)
+        bdg.innerText = f"{len(STORE[group_key])} Loaded"
         bdg.classList.add("active")
         
         inp.value = "" # Clear input
+        log(f"Success: Added {count} files to {group_key}")
         
     except Exception as e:
         js.alert(f"Error: {e}")
+        log(f"Error: {e}")
 
-def clear_group(group):
-    STORE[group] = []
-    bdg = document.getElementById(f"bdg_{group}")
+def do_clear(group_key, badge_id):
+    STORE[group_key] = []
+    bdg = document.getElementById(badge_id)
     bdg.innerText = "0 Loaded"
     bdg.classList.remove("active")
+    log(f"Cleared {group_key}")
 
 def run_analysis(*args):
     try:
-        # Check Data
+        log("Generating Graph...")
         c = STORE["Control"]
         cfa = STORE["CFA"]
         carr = STORE["Carr"]
         
         if not (c and cfa and carr):
-            js.alert("Missing Data! Please ensure all 3 groups have files loaded.")
+            js.alert("Missing Data! Need files for all 3 groups.")
             return
 
         dataset = [c, cfa, carr]
         names = ["Control", "CFA", "Carrageenan"]
         
-        # Plotting
+        # Plot
         fig, ax = plt.subplots(figsize=(8, 6))
-        
-        # ORIGINAL COLORS (As requested)
-        # Control=Grey, CFA=Red (Inflammation), Carr=Orange (Acute)
         colors = ['lightgray', 'firebrick', 'orange']
         
         means = [np.mean(d) for d in dataset]
         sems = [stats.sem(d) if len(d)>1 else 0 for d in dataset]
         
-        # Draw Bars
         ax.bar(names, means, yerr=sems, capsize=8, color=colors, edgecolor='black', alpha=0.9)
         
-        # Draw Scatter Points (Individual Mice)
         for i, d in enumerate(dataset):
             x = np.random.normal(i, 0.04, size=len(d))
             ax.scatter(x, d, color='black', alpha=0.6, s=40, zorder=3)
@@ -206,28 +209,20 @@ def run_analysis(*args):
         ax.set_ylabel("Innervation Index", fontsize=12, fontweight='bold')
         ax.set_title("Footpad Innervation Analysis", fontsize=14, fontweight='bold')
         
-        # Render Plot
         document.getElementById("plot-area").innerHTML = ""
         display(fig, target="plot-area", append=False)
         
-        # Stats Output
+        # Stats
         f, p = stats.f_oneway(*dataset)
-        stats_div = document.getElementById("stats-area")
-        stats_div.style.display = "block"
+        div = document.getElementById("stats-area")
+        div.style.display = "block"
+        res = "SIGNIFICANT *" if p < 0.05 else "ns"
+        div.innerText = f"One-Way ANOVA P-Value: {p:.5f}\nResult: {res}"
         
-        res_text = f"--- STATISTICS REPORT ---\n"
-        res_text += f"Total Mice Analyzed: {sum(len(x) for x in dataset)}\n"
-        res_text += f"One-Way ANOVA P-Value: {p:.5f}\n"
-        
-        if p < 0.05:
-            res_text += ">> SIGNIFICANT DIFFERENCE DETECTED (*)"
-        else:
-            res_text += ">> NO SIGNIFICANT DIFFERENCE (ns)"
-            
-        stats_div.innerText = res_text
+        log("Done.")
 
     except Exception as e:
-        js.alert(f"Analysis Error: {e}")
+        js.alert(f"Error: {e}")
 
 </py-script>
 

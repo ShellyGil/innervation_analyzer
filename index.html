@@ -37,13 +37,10 @@
         
         /* Buttons */
         button { cursor: pointer; border: none; border-radius: 4px; font-weight: 600; transition: 0.2s; }
-        
         .btn-add { background: #3498db; color: white; padding: 6px 10px; width: 100%; margin-top: 4px; font-size: 0.85rem; }
         .btn-add:hover { background: #2980b9; }
-
         .btn-clear { background: white; color: #e74c3c; border: 1px solid #eee; padding: 5px; width: 100%; margin-top: 10px; font-size: 0.8rem; }
         .btn-clear:hover { background: #ffebee; }
-
         .btn-run { background: #2c3e50; color: white; padding: 15px; font-size: 1rem; width: 100%; margin-top: auto; }
         .btn-run:hover { background: #1a252f; }
 
@@ -56,8 +53,11 @@
         .setting-group label { display: block; font-size: 0.75rem; font-weight: bold; color: #888; margin-bottom: 4px; text-transform: uppercase; }
         .setting-group input { width: 90%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; }
         
-        /* Graph Container */
-        #plot-area { background: #fff; width: 100%; max-width: 800px; min-height: 500px; border-radius: 8px; border: 1px solid #e0e0e0; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        /* Graph Container - FIXED OVERFLOW ISSUE */
+        #plot-area { background: #fff; width: 100%; max-width: 800px; min-height: 500px; border-radius: 8px; border: 1px solid #e0e0e0; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 10px; box-sizing: border-box; }
+        
+        /* Ensure responsive image */
+        #plot-area img, #plot-area svg { max-width: 100%; height: auto; }
         
         /* Stats Box */
         #stats-area { background: #333; color: #2ecc71; font-family: 'Consolas', monospace; width: 100%; max-width: 770px; padding: 15px; border-radius: 6px; margin-top: 20px; display: none; white-space: pre-wrap; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -80,37 +80,31 @@
 
         <div class="group-card">
             <div class="group-header">1. CFA Mice</div>
-            
             <div class="sub-input">
                 <div class="sub-label">Left Paw (Injected) <span id="bdg_CFA_L" class="badge">0</span></div>
                 <input type="file" id="in_CFA_L" multiple>
                 <button id="btn_add_CFA_L" class="btn-add">+ Add Left</button>
             </div>
-
             <div class="sub-input">
                 <div class="sub-label">Right Paw (Control) <span id="bdg_CFA_R" class="badge">0</span></div>
                 <input type="file" id="in_CFA_R" multiple>
                 <button id="btn_add_CFA_R" class="btn-add">+ Add Right</button>
             </div>
-            
             <button id="btn_clr_CFA" class="btn-clear">Clear CFA Data</button>
         </div>
 
         <div class="group-card">
             <div class="group-header">2. Carrageenan Mice</div>
-            
             <div class="sub-input">
                 <div class="sub-label">Left Paw (Injected) <span id="bdg_Carr_L" class="badge">0</span></div>
                 <input type="file" id="in_Carr_L" multiple>
                 <button id="btn_add_Carr_L" class="btn-add">+ Add Left</button>
             </div>
-
             <div class="sub-input">
                 <div class="sub-label">Right Paw (Control) <span id="bdg_Carr_R" class="badge">0</span></div>
                 <input type="file" id="in_Carr_R" multiple>
                 <button id="btn_add_Carr_R" class="btn-add">+ Add Right</button>
             </div>
-            
             <button id="btn_clr_Carr" class="btn-clear">Clear Carr Data</button>
         </div>
 
@@ -225,12 +219,16 @@ def run_analysis(event):
     dataset = [ratios_cfa, ratios_carr]
     names = ["CFA", "Carrageenan"]
     
+    # Get P-Value EARLY for plotting
+    t_stat, p_val = stats.ttest_ind(ratios_cfa, ratios_carr)
+
     # User Titles
     title_text = document.getElementById("in-title").value
     ylabel_text = document.getElementById("in-ylabel").value
 
     # PLOTTING
-    fig, ax = plt.subplots(figsize=(7, 6))
+    # Slightly smaller figure size to fit better
+    fig, ax = plt.subplots(figsize=(6.5, 5.5))
     
     # COLORS: Light Blue (#87CEEB) and Grey (#D3D3D3)
     colors = ['#87CEEB', '#D3D3D3']
@@ -240,30 +238,51 @@ def run_analysis(event):
     sems = [stats.sem(d) if len(d)>1 else 0 for d in dataset]
     
     # Bars
-    ax.bar(names, means, yerr=sems, capsize=8, color=colors, edgecolor=edge_colors, linewidth=1.5, width=0.6)
+    ax.bar(names, means, yerr=sems, capsize=8, color=colors, edgecolor=edge_colors, linewidth=1.5, width=0.6, zorder=2)
     
     # Scatter (Individual Mice)
     for i, d in enumerate(dataset):
         x = np.random.normal(i, 0.04, size=len(d))
-        ax.scatter(x, d, color='black', alpha=0.7, s=50, zorder=3)
+        ax.scatter(x, d, color='black', alpha=0.6, s=50, zorder=3)
+
+    # --- ADD SIGNIFICANCE BRACKET ---
+    if p_val < 0.05:
+        # Find max height of data to place bracket above everything
+        y_max = max(max(ratios_cfa), max(ratios_carr))
+        h = y_max * 0.05 # Height buffer for bracket legs
+        y_top = y_max + h * 1.5 # Top line height
+
+        # Coordinates for bracket (x indices 0 and 1)
+        ax.plot([0, 0, 1, 1], [y_top-h, y_top, y_top, y_top-h], lw=1.5, c='black', zorder=4)
+
+        # Determine star text based on standard p-value cutoffs
+        star_text = "*"
+        if p_val < 0.001: star_text = "***"
+        elif p_val < 0.01: star_text = "**"
         
+        # Add text above bracket
+        ax.text(0.5, y_top, star_text, ha='center', va='bottom', fontsize=16, fontweight='bold', zorder=4)
+        
+        # Increase y-limit so bracket isn't cut off
+        ax.set_ylim(top=y_top * 1.1)
+
+    # Styling
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.set_ylabel(ylabel_text, fontsize=12, fontweight='bold')
     ax.set_title(title_text, fontsize=14, fontweight='bold')
+    ax.grid(axis='y', linestyle='--', alpha=0.3, zorder=0)
     
     # Render
     document.getElementById("plot-area").innerHTML = ""
     display(fig, target="plot-area", append=False)
     
-    # STATS (Unpaired T-Test)
-    t_stat, p = stats.ttest_ind(ratios_cfa, ratios_carr)
-    
+    # STATS TEXT OUTPUT
     div = document.getElementById("stats-area")
     div.style.display = "block"
     
-    res = "SIGNIFICANT *" if p < 0.05 else "ns"
-    div.innerText = f"Unpaired T-Test Results:\n------------------------\nCFA Ratio Mean:  {np.mean(ratios_cfa):.3f}\nCarr Ratio Mean: {np.mean(ratios_carr):.3f}\n\nP-Value: {p:.5f}\nResult: {res}"
+    res = "SIGNIFICANT *" if p_val < 0.05 else "ns"
+    div.innerText = f"Unpaired T-Test Results:\n------------------------\nCFA Ratio Mean:  {np.mean(ratios_cfa):.3f}\nCarr Ratio Mean: {np.mean(ratios_carr):.3f}\n\nP-Value: {p_val:.5f}\nResult: {res}"
 
 
 # --- 2. EVENT BINDING ---

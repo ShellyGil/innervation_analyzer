@@ -1,0 +1,8 @@
+MAX_C1-223_lfoot_01_binary.tif 	 5.798182
+MAX_C1-223_lfoot_02_binary.tif 	 7.242512
+MAX_C1-223_lfoot_03_binary.tif 	 4.626140
+MAX_C1-223_lfoot_04_binary.tif 	 5.723845
+MAX_C1-223_lfoot_05_binary.tif 	 2.107632
+MAX_C1-223_lfoot_06_binary.tif 	 3.609951
+MAX_C1-223_lfoot_07_binary.tif 	 3.625943
+MAX_C1-223_lfoot_08_binary.tif 	 6.925179

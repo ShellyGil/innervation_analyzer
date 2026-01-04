@@ -1,0 +1,2 @@
+MAX_C1-222_rfoot_01_binary.tif 	 4.663418
+MAX_C1-222_rfoot_02_binary.tif 	 3.610104

@@ -43,22 +43,25 @@
         .btn-run { background: #2c3e50; color: white; padding: 15px; font-size: 1rem; width: 100%; margin-top: auto; }
         .btn-run:hover { background: #1a252f; }
         
-        /* Download Button */
-        .btn-download { background: #8e44ad; color: white; padding: 0 20px; font-size: 0.9rem; height: 38px; display: flex; align-items: center; }
+        .btn-download { background: #8e44ad; color: white; padding: 0 20px; font-size: 0.9rem; height: 38px; display: flex; align-items: center; border-radius: 6px; }
         .btn-download:hover { background: #732d91; }
         .btn-download:disabled { background: #ddd; cursor: not-allowed; color: #aaa; }
 
         /* RIGHT CONTENT */
         .content { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; background: #f9fafb; }
         
-        /* Settings Bar */
-        .settings-bar { background: #fff; width: 100%; max-width: 950px; padding: 15px 25px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; align-items: flex-end; border: 1px solid #e0e0e0; flex-wrap: wrap; }
-        .setting-group { flex: 1; min-width: 140px; }
-        .setting-group label { display: block; font-size: 0.75rem; font-weight: bold; color: #888; margin-bottom: 4px; text-transform: uppercase; }
-        .setting-group input, .setting-group select { width: 90%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; }
+        /* Settings Container */
+        .settings-container { background: #fff; width: 100%; max-width: 950px; padding: 15px 25px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e0e0e0; display: flex; flex-direction: column; gap: 15px; }
+        
+        .settings-row { display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; }
+        .settings-header { font-size: 0.75rem; font-weight: bold; color: #aaa; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px; }
+
+        .setting-group { flex: 1; min-width: 120px; }
+        .setting-group label { display: block; font-size: 0.75rem; font-weight: bold; color: #555; margin-bottom: 4px; }
+        .setting-group input, .setting-group select { width: 90%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; }
         
         /* Graph Container */
-        #plot-area { background: #fff; width: 100%; max-width: 1100px; min-height: 550px; border-radius: 8px; border: 1px solid #e0e0e0; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 10px; box-sizing: border-box; overflow-x: auto; }
+        #plot-area { background: #fff; width: 100%; max-width: 1100px; min-height: 600px; border-radius: 8px; border: 1px solid #e0e0e0; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 10px; box-sizing: border-box; overflow-x: auto; }
         #plot-area img { max-width: 100%; height: auto; }
         
         /* Stats Box */
@@ -111,27 +114,45 @@
 
     <div class="content">
         
-        <div class="settings-bar">
-            <div class="setting-group" style="flex: 1.5;">
-                <label>Graph Mode</label>
-                <select id="in-mode">
-                    <option value="ratio">Ratio Comparison (Summary)</option>
-                    <option value="raw">Individual Paws (Raw Data)</option>
-                </select>
+        <div class="settings-container">
+            <div class="settings-row">
+                <div class="setting-group" style="flex: 1.5;">
+                    <label>Graph Mode</label>
+                    <select id="in-mode">
+                        <option value="ratio">Ratio Comparison (Summary)</option>
+                        <option value="raw">Individual Paws (Raw Data)</option>
+                    </select>
+                </div>
+                <div class="setting-group" style="flex: 2;">
+                    <label>Graph Title</label>
+                    <input type="text" id="in-title" value="Innervation Analysis">
+                </div>
+                <div class="setting-group">
+                    <label>Y-Axis Label</label>
+                    <input type="text" id="in-ylabel" value="Index Value">
+                </div>
+                <button id="btn-download" class="btn-download" disabled>⬇ PNG</button>
             </div>
-            <div class="setting-group">
-                <label>Graph Title</label>
-                <input type="text" id="in-title" value="Innervation Analysis">
+
+            <div class="settings-header">Appearance (Font Sizes)</div>
+            <div class="settings-row">
+                <div class="setting-group">
+                    <label>Title Font</label>
+                    <input type="number" id="fs-title" value="16" min="10" max="30">
+                </div>
+                <div class="setting-group">
+                    <label>Axis Labels</label>
+                    <input type="number" id="fs-label" value="12" min="8" max="24">
+                </div>
+                <div class="setting-group">
+                    <label>Ticks (Numbers)</label>
+                    <input type="number" id="fs-tick" value="10" min="6" max="20">
+                </div>
+                <div class="setting-group">
+                    <label>Legend</label>
+                    <input type="number" id="fs-legend" value="10" min="6" max="20">
+                </div>
             </div>
-            <div class="setting-group">
-                <label>Y-Axis Label</label>
-                <input type="text" id="in-ylabel" value="Index Value">
-            </div>
-            <div class="setting-group" style="flex: 0.5; min-width: 80px;">
-                <label>Font Size</label>
-                <input type="number" id="in-font" value="10" min="8" max="20">
-            </div>
-            <button id="btn-download" class="btn-download" disabled>⬇ PNG</button>
         </div>
 
         <div id="plot-area">
@@ -155,9 +176,7 @@ import asyncio
 import io, base64
 
 # --- DATA STORE ---
-# Values
 STORE = { "CFA_L": [], "CFA_R": [], "Carr_L": [], "Carr_R": [] }
-# Filenames (for labels)
 NAMES = { "CFA_L": [], "CFA_R": [], "Carr_L": [], "Carr_R": [] }
 
 current_fig = None
@@ -173,10 +192,14 @@ async def add_files(key, input_id, badge_id):
     for i in range(files.length):
         f = files.item(i)
         
-        # Get filename and strip extension
-        fname = f.name
-        if "." in fname: fname = fname.rsplit(".", 1)[0]
-        
+        # SMART NAMING: Get part before first underscore
+        raw_name = f.name
+        if "_" in raw_name:
+            clean_name = raw_name.split("_")[0]
+        else:
+            # Fallback if no underscore, strip extension
+            clean_name = raw_name.rsplit(".", 1)[0]
+            
         text = await f.text()
         clean = text.replace(',', ' ').replace('\t', ' ')
         tokens = clean.split()
@@ -187,7 +210,7 @@ async def add_files(key, input_id, badge_id):
             
         if nums:
             STORE[key].append(np.mean(nums))
-            NAMES[key].append(fname) # Store filename
+            NAMES[key].append(clean_name) 
             
     bdg = document.getElementById(badge_id)
     bdg.innerText = f"{len(STORE[key])}"
@@ -216,19 +239,23 @@ def run_analysis(event):
     mode = document.getElementById("in-mode").value
     title = document.getElementById("in-title").value
     ylabel = document.getElementById("in-ylabel").value
-    font_size = int(document.getElementById("in-font").value)
+    
+    # Font Sizes
+    fs_t = int(document.getElementById("fs-title").value)
+    fs_l = int(document.getElementById("fs-label").value)
+    fs_k = int(document.getElementById("fs-tick").value)
+    fs_lg = int(document.getElementById("fs-legend").value)
 
     if mode == "ratio":
-        plot_ratio_graph(title, ylabel, font_size)
+        plot_ratio_graph(title, ylabel, fs_t, fs_l, fs_k, fs_lg)
     else:
-        plot_raw_graph(title, ylabel, font_size)
+        plot_raw_graph(title, ylabel, fs_t, fs_l, fs_k, fs_lg)
 
     document.getElementById("btn-download").disabled = False
 
-def plot_ratio_graph(title, ylabel, fs):
+def plot_ratio_graph(title, ylabel, fs_t, fs_l, fs_k, fs_lg):
     global current_fig
     
-    # Calc Ratios
     try:
         r_cfa = [l/r for l,r in zip(STORE["CFA_L"], STORE["CFA_R"])]
         r_carr = [l/r for l,r in zip(STORE["Carr_L"], STORE["Carr_R"])]
@@ -236,7 +263,7 @@ def plot_ratio_graph(title, ylabel, fs):
 
     t_stat, p = stats.ttest_ind(r_cfa, r_carr)
     
-    fig, ax = plt.subplots(figsize=(6.5, 5.5))
+    fig, ax = plt.subplots(figsize=(7, 6))
     current_fig = fig
     
     means = [np.mean(r_cfa), np.mean(r_carr)]
@@ -256,14 +283,16 @@ def plot_ratio_graph(title, ylabel, fs):
         y_top = y_max + h * 1.5
         ax.plot([0, 0, 1, 1], [y_top-h, y_top, y_top, y_top-h], lw=1.5, c='black')
         stars = "*" if p >= 0.01 else ("**" if p >= 0.001 else "***")
-        ax.text(0.5, y_top, stars, ha='center', va='bottom', fontsize=fs+4, fontweight='bold')
+        ax.text(0.5, y_top, stars, ha='center', va='bottom', fontsize=fs_t, fontweight='bold')
         ax.set_ylim(top=y_top * 1.1)
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.set_title(title, fontweight='bold', fontsize=fs+2)
-    ax.set_ylabel(ylabel, fontweight='bold', fontsize=fs)
-    ax.tick_params(axis='both', which='major', labelsize=fs)
+    
+    # Fonts
+    ax.set_title(title, fontweight='bold', fontsize=fs_t)
+    ax.set_ylabel(ylabel, fontweight='bold', fontsize=fs_l)
+    ax.tick_params(axis='both', which='major', labelsize=fs_k)
 
     document.getElementById("plot-area").innerHTML = ""
     display(fig, target="plot-area", append=False)
@@ -272,71 +301,79 @@ def plot_ratio_graph(title, ylabel, fs):
     div.style.display = "block"
     div.innerText = f"T-Test P-Value: {p:.5f} ({'Significant *' if p<0.05 else 'ns'})"
 
-def plot_raw_graph(title, ylabel, fs):
+def plot_raw_graph(title, ylabel, fs_t, fs_l, fs_k, fs_lg):
     global current_fig
     
     labels = []
     values = []
     colors = []
     
-    # Process CFA Data
-    for i in range(len(STORE["CFA_R"])):
-        # Try to find mouse number from filename
-        # Expecting something like "Mouse235_L" -> label "235 L"
-        # We use the filename stored in NAMES dict
+    # Helper to check if name implies side
+    def get_smart_label(name, side_char):
+        # If name is "223L" and side is "L", we just show "223L"
+        # If name is "Mouse1" and side is "L", we show "Mouse1 (L)"
         
+        name_u = name.upper()
+        if name_u.endswith(side_char):
+            return name
+        else:
+            return f"{name} ({side_char})"
+
+    # CFA Data
+    for i in range(len(STORE["CFA_R"])):
         # Right (Grey)
-        name_r = NAMES["CFA_R"][i]
-        labels.append(f"{name_r}\n(R)")
+        lbl = get_smart_label(NAMES["CFA_R"][i], "R")
+        labels.append(lbl)
         values.append(STORE["CFA_R"][i])
         colors.append("#D3D3D3") 
         
         # Left (Red)
-        name_l = NAMES["CFA_L"][i]
-        labels.append(f"{name_l}\n(L)")
+        lbl = get_smart_label(NAMES["CFA_L"][i], "L")
+        labels.append(lbl)
         values.append(STORE["CFA_L"][i])
         colors.append("firebrick") 
 
-    # Process Carr Data
+    # Carr Data
     for i in range(len(STORE["Carr_R"])):
         # Right (Grey)
-        name_r = NAMES["Carr_R"][i]
-        labels.append(f"{name_r}\n(R)")
+        lbl = get_smart_label(NAMES["Carr_R"][i], "R")
+        labels.append(lbl)
         values.append(STORE["Carr_R"][i])
         colors.append("#D3D3D3") 
         
         # Left (Blue)
-        name_l = NAMES["Carr_L"][i]
-        labels.append(f"{name_l}\n(L)")
+        lbl = get_smart_label(NAMES["Carr_L"][i], "L")
+        labels.append(lbl)
         values.append(STORE["Carr_L"][i])
         colors.append("#87CEEB") 
 
     total_bars = len(values)
-    width = max(8, total_bars * 0.6) # Dynamic width
+    width = max(8, total_bars * 0.7) 
     
-    fig, ax = plt.subplots(figsize=(width, 6))
+    fig, ax = plt.subplots(figsize=(width, 7))
     current_fig = fig
     
     x_pos = np.arange(len(labels))
     ax.bar(x_pos, values, color=colors, edgecolor='black', width=0.8)
     
     ax.set_xticks(x_pos)
-    ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=fs)
+    ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=fs_k)
     
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.set_title(title, fontweight='bold', fontsize=fs+2)
-    ax.set_ylabel(ylabel, fontweight='bold', fontsize=fs)
-    ax.tick_params(axis='y', labelsize=fs)
     
-    # --- ADD LEGEND ---
-    # Create custom handles for the legend
+    # Fonts
+    ax.set_title(title, fontweight='bold', fontsize=fs_t)
+    ax.set_ylabel(ylabel, fontweight='bold', fontsize=fs_l)
+    ax.tick_params(axis='y', labelsize=fs_k)
+    
+    # Legend
     patch_cfa = mpatches.Patch(color='firebrick', label='CFA (Injected)')
     patch_carr = mpatches.Patch(color='#87CEEB', label='Carrageenan (Injected)')
     patch_ctrl = mpatches.Patch(color='#D3D3D3', label='Right Paw (Control)')
     
     ax.legend(handles=[patch_cfa, patch_carr, patch_ctrl], 
-              loc='upper right', frameon=False, fontsize=fs)
+              loc='upper right', frameon=False, fontsize=fs_lg)
     
     document.getElementById("plot-area").innerHTML = ""
     display(fig, target="plot-area", append=False)

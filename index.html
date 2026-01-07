@@ -245,29 +245,25 @@ def plot_4bar_summary(title, ylabel, fs):
     labels = ["CFA\nControl", "CFA\nInj", "Carr\nControl", "Carr\nInj"]
     colors = ["#D3D3D3", "firebrick", "#D3D3D3", "#87CEEB"] # Grey, Red, Grey, Blue
     
-    fig, ax = plt.subplots(figsize=(8, 6))
+    # Make figure slightly wider to accommodate legend on right
+    fig, ax = plt.subplots(figsize=(10, 6))
     current_fig = fig
     
     # Bars
     x_pos = [0, 1, 2.5, 3.5] # Spacer between groups
     ax.bar(x_pos, means, yerr=sems, capsize=6, color=colors, edgecolor='black', width=0.8)
     
-    # Scatter Points (Connected lines for paired data?)
-    # For clarity in 4-bar, usually just scatter is enough, but paired lines are better.
-    # Let's do simple scatter for now to match style
-    
-    # CFA Scatter
+    # CFA Scatter & Lines
     for i in range(len(cfa_r)):
-        ax.scatter(0 + np.random.normal(0,0.03), cfa_r[i], color='black', alpha=0.5, zorder=3)
-        ax.scatter(1 + np.random.normal(0,0.03), cfa_l[i], color='black', alpha=0.5, zorder=3)
-        # Optional: draw faint line connecting them
-        ax.plot([0, 1], [cfa_r[i], cfa_l[i]], color='black', alpha=0.2, linewidth=0.5)
+        ax.scatter(0, cfa_r[i], color='black', alpha=0.5, zorder=3)
+        ax.scatter(1, cfa_l[i], color='black', alpha=0.5, zorder=3)
+        ax.plot([0, 1], [cfa_r[i], cfa_l[i]], color='grey', alpha=0.3, linewidth=0.5)
 
-    # Carr Scatter
+    # Carr Scatter & Lines
     for i in range(len(carr_r)):
-        ax.scatter(2.5 + np.random.normal(0,0.03), carr_r[i], color='black', alpha=0.5, zorder=3)
-        ax.scatter(3.5 + np.random.normal(0,0.03), carr_l[i], color='black', alpha=0.5, zorder=3)
-        ax.plot([2.5, 3.5], [carr_r[i], carr_l[i]], color='black', alpha=0.2, linewidth=0.5)
+        ax.scatter(2.5, carr_r[i], color='black', alpha=0.5, zorder=3)
+        ax.scatter(3.5, carr_l[i], color='black', alpha=0.5, zorder=3)
+        ax.plot([2.5, 3.5], [carr_r[i], carr_l[i]], color='grey', alpha=0.3, linewidth=0.5)
 
     # Significance Brackets
     def draw_bracket(x1, x2, p_val, y_max_data):
@@ -280,7 +276,7 @@ def plot_4bar_summary(title, ylabel, fs):
         return y_top
 
     # Calculate Y-Limits
-    y_max = max(means) + max(sems) + (max(means)*0.2)
+    y_max_global = max(means) + max(sems)
     
     # Bracket 1: CFA
     top_cfa = max(max(cfa_r), max(cfa_l))
@@ -289,6 +285,9 @@ def plot_4bar_summary(title, ylabel, fs):
     # Bracket 2: Carr
     top_carr = max(max(carr_r), max(carr_l))
     draw_bracket(2.5, 3.5, p_carr, top_carr)
+    
+    # Increase Y limit slightly for brackets
+    ax.set_ylim(bottom=0, top=max(top_cfa, top_carr) * 1.15)
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -300,11 +299,15 @@ def plot_4bar_summary(title, ylabel, fs):
     ax.set_ylabel(ylabel, fontweight='bold', fontsize=fs['l'])
     ax.tick_params(axis='y', labelsize=fs['k'])
     
-    # Legend
+    # Legend OUTSIDE to the right
     p1 = mpatches.Patch(color='firebrick', label='CFA (Injected)')
     p2 = mpatches.Patch(color='#87CEEB', label='Carrageenan (Injected)')
     p3 = mpatches.Patch(color='#D3D3D3', label='Control (Right)')
-    ax.legend(handles=[p1, p2, p3], loc='upper right', frameon=False, fontsize=fs['leg'])
+    
+    ax.legend(handles=[p1, p2, p3], bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0., frameon=False, fontsize=fs['leg'])
+    
+    # Tight layout to handle outside legend
+    plt.tight_layout()
 
     document.getElementById("plot-area").innerHTML = ""
     display(fig, target="plot-area", append=False)
@@ -338,7 +341,7 @@ def plot_raw_graph(title, ylabel, fs):
         values.append(STORE["Carr_L"][i])
         colors.append("#87CEEB") 
 
-    width = max(8, len(values) * 0.7) 
+    width = max(10, len(values) * 0.7) 
     fig, ax = plt.subplots(figsize=(width, 7))
     current_fig = fig
     
@@ -356,7 +359,11 @@ def plot_raw_graph(title, ylabel, fs):
     p1 = mpatches.Patch(color='firebrick', label='CFA (Injected)')
     p2 = mpatches.Patch(color='#87CEEB', label='Carrageenan (Injected)')
     p3 = mpatches.Patch(color='#D3D3D3', label='Right Paw (Control)')
-    ax.legend(handles=[p1, p2, p3], loc='upper right', frameon=False, fontsize=fs['leg'])
+    
+    # Legend OUTSIDE to the right
+    ax.legend(handles=[p1, p2, p3], bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0., frameon=False, fontsize=fs['leg'])
+    
+    plt.tight_layout()
     
     document.getElementById("plot-area").innerHTML = ""
     display(fig, target="plot-area", append=False)

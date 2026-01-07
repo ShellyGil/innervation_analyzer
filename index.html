@@ -50,9 +50,7 @@
         /* RIGHT CONTENT */
         .content { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; background: #f9fafb; }
         
-        /* Settings Container */
         .settings-container { background: #fff; width: 100%; max-width: 950px; padding: 15px 25px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e0e0e0; display: flex; flex-direction: column; gap: 15px; }
-        
         .settings-row { display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; }
         .settings-header { font-size: 0.75rem; font-weight: bold; color: #aaa; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px; }
 
@@ -60,11 +58,9 @@
         .setting-group label { display: block; font-size: 0.75rem; font-weight: bold; color: #555; margin-bottom: 4px; }
         .setting-group input, .setting-group select { width: 90%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; }
         
-        /* Graph Container */
         #plot-area { background: #fff; width: 100%; max-width: 1100px; min-height: 600px; border-radius: 8px; border: 1px solid #e0e0e0; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 10px; box-sizing: border-box; overflow-x: auto; }
         #plot-area img { max-width: 100%; height: auto; }
         
-        /* Stats Box */
         #stats-area { background: #333; color: #2ecc71; font-family: 'Consolas', monospace; width: 100%; max-width: 970px; padding: 15px; border-radius: 6px; margin-top: 20px; display: none; white-space: pre-wrap; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
     </style>
@@ -77,7 +73,6 @@
 </div>
 
 <div class="dashboard">
-    
     <div class="sidebar">
         <div class="group-card">
             <div class="group-header">1. CFA Mice</div>
@@ -108,18 +103,16 @@
             </div>
             <button id="btn_clr_Carr" class="btn-clear">Clear Carr Data</button>
         </div>
-
         <button id="btn-run" class="btn-run">GENERATE GRAPH</button>
     </div>
 
     <div class="content">
-        
         <div class="settings-container">
             <div class="settings-row">
                 <div class="setting-group" style="flex: 1.5;">
                     <label>Graph Mode</label>
                     <select id="in-mode">
-                        <option value="ratio">Ratio Comparison (Summary)</option>
+                        <option value="ratio">Group Comparison (4 Bars)</option>
                         <option value="raw">Individual Paws (Raw Data)</option>
                     </select>
                 </div>
@@ -129,7 +122,7 @@
                 </div>
                 <div class="setting-group">
                     <label>Y-Axis Label</label>
-                    <input type="text" id="in-ylabel" value="Index Value">
+                    <input type="text" id="in-ylabel" value="Innervation Index">
                 </div>
                 <button id="btn-download" class="btn-download" disabled>⬇ PNG</button>
             </div>
@@ -158,10 +151,8 @@
         <div id="plot-area">
             <div style="color:#aaa; font-style:italic;">Upload data to begin...</div>
         </div>
-
         <div id="stats-area"></div>
     </div>
-
 </div>
 
 <py-script>
@@ -175,31 +166,19 @@ from pyodide.ffi import create_proxy
 import asyncio
 import io, base64
 
-# --- DATA STORE ---
 STORE = { "CFA_L": [], "CFA_R": [], "Carr_L": [], "Carr_R": [] }
 NAMES = { "CFA_L": [], "CFA_R": [], "Carr_L": [], "Carr_R": [] }
-
 current_fig = None
 
-# --- FILE HANDLING ---
 async def add_files(key, input_id, badge_id):
     inp = document.getElementById(input_id)
     files = inp.files
-    if files.length == 0:
-        alert("Select files first.")
-        return
+    if files.length == 0: return alert("Select files first.")
 
     for i in range(files.length):
         f = files.item(i)
-        
-        # SMART NAMING: Get part before first underscore
         raw_name = f.name
-        if "_" in raw_name:
-            clean_name = raw_name.split("_")[0]
-        else:
-            # Fallback if no underscore, strip extension
-            clean_name = raw_name.rsplit(".", 1)[0]
-            
+        clean_name = raw_name.split("_")[0] if "_" in raw_name else raw_name.rsplit(".", 1)[0]
         text = await f.text()
         clean = text.replace(',', ' ').replace('\t', ' ')
         tokens = clean.split()
@@ -207,7 +186,6 @@ async def add_files(key, input_id, badge_id):
         for t in tokens:
             try: nums.append(float(t))
             except: pass
-            
         if nums:
             STORE[key].append(np.mean(nums))
             NAMES[key].append(clean_name) 
@@ -226,193 +204,194 @@ def clear_group(group_prefix):
         bdg.innerText = "0"
         bdg.classList.remove("active")
 
-# --- PLOTTING ---
 def run_analysis(event):
     global current_fig
-    
-    # Validation
     if len(STORE["CFA_L"]) != len(STORE["CFA_R"]): return alert("Mismatch in CFA pairs!")
     if len(STORE["Carr_L"]) != len(STORE["Carr_R"]): return alert("Mismatch in Carrageenan pairs!")
     if len(STORE["CFA_L"]) == 0 or len(STORE["Carr_L"]) == 0: return alert("Missing Data!")
 
-    # Settings
     mode = document.getElementById("in-mode").value
     title = document.getElementById("in-title").value
     ylabel = document.getElementById("in-ylabel").value
-    
-    # Font Sizes
-    fs_t = int(document.getElementById("fs-title").value)
-    fs_l = int(document.getElementById("fs-label").value)
-    fs_k = int(document.getElementById("fs-tick").value)
-    fs_lg = int(document.getElementById("fs-legend").value)
+    fs = {
+        't': int(document.getElementById("fs-title").value),
+        'l': int(document.getElementById("fs-label").value),
+        'k': int(document.getElementById("fs-tick").value),
+        'leg': int(document.getElementById("fs-legend").value)
+    }
 
     if mode == "ratio":
-        plot_ratio_graph(title, ylabel, fs_t, fs_l, fs_k, fs_lg)
+        plot_4bar_summary(title, ylabel, fs)
     else:
-        plot_raw_graph(title, ylabel, fs_t, fs_l, fs_k, fs_lg)
-
+        plot_raw_graph(title, ylabel, fs)
     document.getElementById("btn-download").disabled = False
 
-def plot_ratio_graph(title, ylabel, fs_t, fs_l, fs_k, fs_lg):
+# --- 4 BAR SUMMARY (CFA C vs I, Carr C vs I) ---
+def plot_4bar_summary(title, ylabel, fs):
     global current_fig
     
-    try:
-        r_cfa = [l/r for l,r in zip(STORE["CFA_L"], STORE["CFA_R"])]
-        r_carr = [l/r for l,r in zip(STORE["Carr_L"], STORE["Carr_R"])]
-    except ZeroDivisionError: return alert("Error: Right Paw value is 0.")
-
-    t_stat, p = stats.ttest_ind(r_cfa, r_carr)
+    # Data Groups
+    cfa_r, cfa_l = STORE["CFA_R"], STORE["CFA_L"]
+    carr_r, carr_l = STORE["Carr_R"], STORE["Carr_L"]
     
-    fig, ax = plt.subplots(figsize=(7, 6))
+    # Paired T-Tests
+    t_cfa, p_cfa = stats.ttest_rel(cfa_r, cfa_l)
+    t_carr, p_carr = stats.ttest_rel(carr_r, carr_l)
+    
+    # Means & SEMs
+    means = [np.mean(cfa_r), np.mean(cfa_l), np.mean(carr_r), np.mean(carr_l)]
+    sems = [stats.sem(cfa_r), stats.sem(cfa_l), stats.sem(carr_r), stats.sem(carr_l)]
+    
+    labels = ["CFA\nControl", "CFA\nInj", "Carr\nControl", "Carr\nInj"]
+    colors = ["#D3D3D3", "firebrick", "#D3D3D3", "#87CEEB"] # Grey, Red, Grey, Blue
+    
+    fig, ax = plt.subplots(figsize=(8, 6))
     current_fig = fig
     
-    means = [np.mean(r_cfa), np.mean(r_carr)]
-    sems = [stats.sem(r_cfa), stats.sem(r_carr)]
-    names = ["CFA", "Carrageenan"]
-    colors = ['#87CEEB', '#D3D3D3'] 
+    # Bars
+    x_pos = [0, 1, 2.5, 3.5] # Spacer between groups
+    ax.bar(x_pos, means, yerr=sems, capsize=6, color=colors, edgecolor='black', width=0.8)
     
-    ax.bar(names, means, yerr=sems, capsize=8, color=colors, edgecolor='black', width=0.6)
+    # Scatter Points (Connected lines for paired data?)
+    # For clarity in 4-bar, usually just scatter is enough, but paired lines are better.
+    # Let's do simple scatter for now to match style
     
-    for i, d in enumerate([r_cfa, r_carr]):
-        x = np.random.normal(i, 0.04, size=len(d))
-        ax.scatter(x, d, color='black', alpha=0.6, s=50, zorder=3)
-        
-    if p < 0.05:
-        y_max = max(max(r_cfa), max(r_carr))
-        h = y_max * 0.05
-        y_top = y_max + h * 1.5
-        ax.plot([0, 0, 1, 1], [y_top-h, y_top, y_top, y_top-h], lw=1.5, c='black')
-        stars = "*" if p >= 0.01 else ("**" if p >= 0.001 else "***")
-        ax.text(0.5, y_top, stars, ha='center', va='bottom', fontsize=fs_t, fontweight='bold')
-        ax.set_ylim(top=y_top * 1.1)
+    # CFA Scatter
+    for i in range(len(cfa_r)):
+        ax.scatter(0 + np.random.normal(0,0.03), cfa_r[i], color='black', alpha=0.5, zorder=3)
+        ax.scatter(1 + np.random.normal(0,0.03), cfa_l[i], color='black', alpha=0.5, zorder=3)
+        # Optional: draw faint line connecting them
+        ax.plot([0, 1], [cfa_r[i], cfa_l[i]], color='black', alpha=0.2, linewidth=0.5)
+
+    # Carr Scatter
+    for i in range(len(carr_r)):
+        ax.scatter(2.5 + np.random.normal(0,0.03), carr_r[i], color='black', alpha=0.5, zorder=3)
+        ax.scatter(3.5 + np.random.normal(0,0.03), carr_l[i], color='black', alpha=0.5, zorder=3)
+        ax.plot([2.5, 3.5], [carr_r[i], carr_l[i]], color='black', alpha=0.2, linewidth=0.5)
+
+    # Significance Brackets
+    def draw_bracket(x1, x2, p_val, y_max_data):
+        if p_val >= 0.05: return y_max_data
+        h = y_max_data * 0.05
+        y_top = y_max_data + h
+        ax.plot([x1, x1, x2, x2], [y_top-h*0.5, y_top, y_top, y_top-h*0.5], lw=1.5, c='black')
+        stars = "*" if p_val >= 0.01 else ("**" if p_val >= 0.001 else "***")
+        ax.text((x1+x2)/2, y_top, stars, ha='center', va='bottom', fontsize=fs['t'], fontweight='bold')
+        return y_top
+
+    # Calculate Y-Limits
+    y_max = max(means) + max(sems) + (max(means)*0.2)
+    
+    # Bracket 1: CFA
+    top_cfa = max(max(cfa_r), max(cfa_l))
+    draw_bracket(0, 1, p_cfa, top_cfa)
+    
+    # Bracket 2: Carr
+    top_carr = max(max(carr_r), max(carr_l))
+    draw_bracket(2.5, 3.5, p_carr, top_carr)
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     
-    # Fonts
-    ax.set_title(title, fontweight='bold', fontsize=fs_t)
-    ax.set_ylabel(ylabel, fontweight='bold', fontsize=fs_l)
-    ax.tick_params(axis='both', which='major', labelsize=fs_k)
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(labels, fontsize=fs['l'])
+    
+    ax.set_title(title, fontweight='bold', fontsize=fs['t'])
+    ax.set_ylabel(ylabel, fontweight='bold', fontsize=fs['l'])
+    ax.tick_params(axis='y', labelsize=fs['k'])
+    
+    # Legend
+    p1 = mpatches.Patch(color='firebrick', label='CFA (Injected)')
+    p2 = mpatches.Patch(color='#87CEEB', label='Carrageenan (Injected)')
+    p3 = mpatches.Patch(color='#D3D3D3', label='Control (Right)')
+    ax.legend(handles=[p1, p2, p3], loc='upper right', frameon=False, fontsize=fs['leg'])
 
     document.getElementById("plot-area").innerHTML = ""
     display(fig, target="plot-area", append=False)
     
     div = document.getElementById("stats-area")
     div.style.display = "block"
-    div.innerText = f"T-Test P-Value: {p:.5f} ({'Significant *' if p<0.05 else 'ns'})"
+    div.innerText = f"PAIRED T-TEST RESULTS:\n---------------------\nCFA (Right vs Left): P={p_cfa:.5f} ({'Sig*' if p_cfa<0.05 else 'ns'})\nCarr (Right vs Left): P={p_carr:.5f} ({'Sig*' if p_carr<0.05 else 'ns'})"
 
-def plot_raw_graph(title, ylabel, fs_t, fs_l, fs_k, fs_lg):
+def plot_raw_graph(title, ylabel, fs):
     global current_fig
-    
-    labels = []
-    values = []
-    colors = []
-    
-    # Helper to check if name implies side
-    def get_smart_label(name, side_char):
-        # If name is "223L" and side is "L", we just show "223L"
-        # If name is "Mouse1" and side is "L", we show "Mouse1 (L)"
-        
-        name_u = name.upper()
-        if name_u.endswith(side_char):
-            return name
-        else:
-            return f"{name} ({side_char})"
+    labels, values, colors = [], [], []
+    def get_lbl(name, side): return name if name.upper().endswith(side) else f"{name} ({side})"
 
-    # CFA Data
+    # CFA
     for i in range(len(STORE["CFA_R"])):
-        # Right (Grey)
-        lbl = get_smart_label(NAMES["CFA_R"][i], "R")
-        labels.append(lbl)
+        labels.append(get_lbl(NAMES["CFA_R"][i], "R"))
         values.append(STORE["CFA_R"][i])
         colors.append("#D3D3D3") 
         
-        # Left (Red)
-        lbl = get_smart_label(NAMES["CFA_L"][i], "L")
-        labels.append(lbl)
+        labels.append(get_lbl(NAMES["CFA_L"][i], "L"))
         values.append(STORE["CFA_L"][i])
         colors.append("firebrick") 
 
-    # Carr Data
+    # Carr
     for i in range(len(STORE["Carr_R"])):
-        # Right (Grey)
-        lbl = get_smart_label(NAMES["Carr_R"][i], "R")
-        labels.append(lbl)
+        labels.append(get_lbl(NAMES["Carr_R"][i], "R"))
         values.append(STORE["Carr_R"][i])
         colors.append("#D3D3D3") 
         
-        # Left (Blue)
-        lbl = get_smart_label(NAMES["Carr_L"][i], "L")
-        labels.append(lbl)
+        labels.append(get_lbl(NAMES["Carr_L"][i], "L"))
         values.append(STORE["Carr_L"][i])
         colors.append("#87CEEB") 
 
-    total_bars = len(values)
-    width = max(8, total_bars * 0.7) 
-    
+    width = max(8, len(values) * 0.7) 
     fig, ax = plt.subplots(figsize=(width, 7))
     current_fig = fig
     
-    x_pos = np.arange(len(labels))
-    ax.bar(x_pos, values, color=colors, edgecolor='black', width=0.8)
-    
-    ax.set_xticks(x_pos)
-    ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=fs_k)
+    x = np.arange(len(labels))
+    ax.bar(x, values, color=colors, edgecolor='black', width=0.8)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=fs['k'])
     
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
+    ax.set_title(title, fontweight='bold', fontsize=fs['t'])
+    ax.set_ylabel(ylabel, fontweight='bold', fontsize=fs['l'])
+    ax.tick_params(axis='y', labelsize=fs['k'])
     
-    # Fonts
-    ax.set_title(title, fontweight='bold', fontsize=fs_t)
-    ax.set_ylabel(ylabel, fontweight='bold', fontsize=fs_l)
-    ax.tick_params(axis='y', labelsize=fs_k)
-    
-    # Legend
-    patch_cfa = mpatches.Patch(color='firebrick', label='CFA (Injected)')
-    patch_carr = mpatches.Patch(color='#87CEEB', label='Carrageenan (Injected)')
-    patch_ctrl = mpatches.Patch(color='#D3D3D3', label='Right Paw (Control)')
-    
-    ax.legend(handles=[patch_cfa, patch_carr, patch_ctrl], 
-              loc='upper right', frameon=False, fontsize=fs_lg)
+    p1 = mpatches.Patch(color='firebrick', label='CFA (Injected)')
+    p2 = mpatches.Patch(color='#87CEEB', label='Carrageenan (Injected)')
+    p3 = mpatches.Patch(color='#D3D3D3', label='Right Paw (Control)')
+    ax.legend(handles=[p1, p2, p3], loc='upper right', frameon=False, fontsize=fs['leg'])
     
     document.getElementById("plot-area").innerHTML = ""
     display(fig, target="plot-area", append=False)
     document.getElementById("stats-area").style.display = "none"
 
-# --- DOWNLOAD ---
-def download_plot(event):
+def download_plot(e):
     if current_fig is None: return
     buf = io.BytesIO()
     current_fig.savefig(buf, format='png', dpi=300, bbox_inches='tight')
     buf.seek(0)
-    img_str = "data:image/png;base64," + base64.b64encode(buf.read()).decode('UTF-8')
     link = document.createElement('a')
-    link.href = img_str
+    link.href = "data:image/png;base64," + base64.b64encode(buf.read()).decode('UTF-8')
     link.download = "innervation_graph.png"
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
 
-# --- BINDING ---
-async def on_add_cfa_l(e): await add_files("CFA_L", "in_CFA_L", "bdg_CFA_L")
-async def on_add_cfa_r(e): await add_files("CFA_R", "in_CFA_R", "bdg_CFA_R")
-async def on_add_carr_l(e): await add_files("Carr_L", "in_Carr_L", "bdg_Carr_L")
-async def on_add_carr_r(e): await add_files("Carr_R", "in_Carr_R", "bdg_Carr_R")
-def on_clr_cfa(e): clear_group("CFA")
-def on_clr_carr(e): clear_group("Carr")
+async def add_cfa_l(e): await add_files("CFA_L", "in_CFA_L", "bdg_CFA_L")
+async def add_cfa_r(e): await add_files("CFA_R", "in_CFA_R", "bdg_CFA_R")
+async def add_carr_l(e): await add_files("Carr_L", "in_Carr_L", "bdg_Carr_L")
+async def add_carr_r(e): await add_files("Carr_R", "in_Carr_R", "bdg_Carr_R")
+def clr_cfa(e): clear_group("CFA")
+def clr_carr(e): clear_group("Carr")
 
 def main():
-    document.getElementById("btn_add_CFA_L").addEventListener("click", create_proxy(on_add_cfa_l))
-    document.getElementById("btn_add_CFA_R").addEventListener("click", create_proxy(on_add_cfa_r))
-    document.getElementById("btn_add_Carr_L").addEventListener("click", create_proxy(on_add_carr_l))
-    document.getElementById("btn_add_Carr_R").addEventListener("click", create_proxy(on_add_carr_r))
-    document.getElementById("btn_clr_CFA").addEventListener("click", create_proxy(on_clr_cfa))
-    document.getElementById("btn_clr_Carr").addEventListener("click", create_proxy(on_clr_carr))
+    document.getElementById("btn_add_CFA_L").addEventListener("click", create_proxy(add_cfa_l))
+    document.getElementById("btn_add_CFA_R").addEventListener("click", create_proxy(add_cfa_r))
+    document.getElementById("btn_add_Carr_L").addEventListener("click", create_proxy(add_carr_l))
+    document.getElementById("btn_add_Carr_R").addEventListener("click", create_proxy(add_carr_r))
+    document.getElementById("btn_clr_CFA").addEventListener("click", create_proxy(clr_cfa))
+    document.getElementById("btn_clr_Carr").addEventListener("click", create_proxy(clr_carr))
     document.getElementById("btn-run").addEventListener("click", create_proxy(run_analysis))
     document.getElementById("btn-download").addEventListener("click", create_proxy(download_plot))
 
 main()
-
 </py-script>
 
 </body>

@@ -1,80 +1,77 @@
-# 🐭 Innervation Ratio Analyzer
+# 🐭 Innervation Analysis Dashboard
 
-A web-based tool for analyzing and visualizing nociceptor innervation patterns in mouse footpads. This application calculates the ratio of innervation between injured (Left) and control (Right) paws, compares experimental groups (CFA vs. Carrageenan), and generates publication-quality figures with statistical analysis.
+A comprehensive web-based tool for analyzing nociceptor innervation patterns. This application offers a complete workflow: parsing raw data files, normalizing data via Left/Right ratios, performing statistical tests, and generating two types of publication-quality figures (Summary Ratios and Raw Data).
 
-🔗 [Live Demo](https://shellygil.github.io/innervation_analyzer/)
-## 🎯 Features
+🔗 **[Live Demo](https://shellygil.github.io/innervation_analyzer/)**
 
-* **Browser-Based:** Runs entirely in your web browser using PyScript (no Python installation required).
-* **Ratio Analysis:** Automatically calculates the  $Ratio = \frac{\text{Left Index (Injected)}}{\text{Right Index (Control)}}$  for each animal to normalize baseline variability.
-* **Batch Processing:** Upload multiple raw text files at once for CFA and Carrageenan groups.
-* **Statistical Analysis:** Performs an **Unpaired T-Test** between groups and reports the P-value.
-* **Scientific Visualization:**
-    * Generates Bar Charts with overlaid individual data points (scatter).
-    * Includes Standard Error of Mean (SEM) error bars.
-    * Automatically draws **Significance Brackets** with stars (*, **, ***) if $p < 0.05$.
-    * "GraphPad Prism" style aesthetics (Floating axes, clean background).
-* **Customization:** Edit graph titles and axis labels directly from the dashboard.
+## 🎯 Key Features
+
+### 1. Dual Visualization Modes
+* **📊 Ratio Comparison (Summary):** Calculates the $Ratio = \frac{\text{Left (Injured)}}{\text{Right (Control)}}$ for every mouse, averages them per group, and runs an **Unpaired T-Test**. Best for seeing the overall effect size.
+* **📈 Individual Paws (Raw Data):** A "Long Graph" that displays the raw innervation index for **every single paw** side-by-side. Best for quality control and spotting outliers.
+
+### 2. Smart Automation
+* **Auto-Labeling:** The app reads your filenames (e.g., `223L_data.txt`) and automatically extracts the Mouse ID (`223L`) to label the X-axis.
+* **Significance Testing:** Automatically calculates P-values and draws scientific "bracket" lines with stars (*, **, ***) if results are significant ($p < 0.05$).
+
+### 3. Publication-Ready Customization
+* **Appearance Control:** Adjust font sizes individually for the Main Title, Axis Labels, Tick Numbers, and the Legend.
+* **Dynamic Legend:** Automatically adds a color-coded legend (Red=CFA, Blue=Carrageenan, Grey=Control).
+* **Export:** Download high-resolution PNGs directly from the dashboard.
+
+## 📂 Input Data & Naming Convention
+
+The app accepts **.txt files** where the last number on each line is the measurement.
+
+**💡 Pro Tip for Automatic Labeling:**
+To get the best axis labels in the "Raw Data" graph, name your files starting with the Mouse ID followed by an underscore or dot.
+* **Good:** `235L_innervation.txt` → Label on Graph: **235L**
+* **Good:** `Mouse4_Right.txt` → Label on Graph: **Mouse4 (R)**
 
 ## 🚀 How to Use
-1. **Open the App:** Navigate to the website URL.
-2. **Load CFA Data:**
-  * Upload all Left Paw text files for the CFA group. Click + Add Left.
-  * Upload all Right Paw text files for the CFA group. Click + Add Right.
-  * Note: Ensure the order of files matches (the 1st Left file belongs to the same mouse as the 1st Right file).
-3. **Load Carrageenan Data:**
-  * Repeat the process for the Carrageenan Left and Right groups.
-4. **Generate:** Click the CALCULATE RATIOS button.
-5. **Analyze:**
-  * View the generated graph on the right.
-  * Check the "Statistics" box below the graph for the T-Test results.
-  * Right-click the graph to save the image.
 
+1.  **Open the App:** Navigate to the website URL.
+2.  **Upload Data:**
+    * **CFA Group:** Upload Left (Injected) and Right (Control) files.
+    * **Carrageenan Group:** Upload Left (Injected) and Right (Control) files.
+    * *Note: Ensure files are uploaded in matching order (1st Left pairs with 1st Right).*
+3.  **Choose Graph Mode:**
+    * Select **"Ratio Comparison"** for the summary statistics.
+    * Select **"Individual Paws"** to see the raw data distribution.
+4.  **Customize:**
+    * Edit the Graph Title and Y-Axis Label.
+    * Use the **Appearance** row to tweak font sizes until it looks perfect.
+5.  **Generate & Download:** Click **GENERATE GRAPH** to view, then click **⬇ PNG** to save the figure.
 
 ## 🛠️ Technologies Used
 
-* HTML5 / CSS3: For the responsive Dashboard layout.
-* PyScript: To run Python code inside the browser.
-* Pandas: Data manipulation.
-* SciPy: Statistical testing (T-Test).
-* Matplotlib: Figure generation.
+* **[PyScript](https://pyscript.net/):** Python runtime in the browser.
+* **Pandas & NumPy:** Data handling and math.
+* **Matplotlib:** Scientific plotting.
+* **SciPy:** Statistical analysis (T-Tests).
 
 ## 📦 Local Development
 
-If you want to run this locally without GitHub Pages:
-1. Clone this repository.
-2. You cannot open index.html directly (due to browser security policies regarding local file access).
-3. Use a simple local server:
+To run this locally:
+1.  Clone the repository.
+2.  Start a local server (browsers block local file access for security):
+    ```bash
+    python -m http.server
+    ```
+3.  Open `http://localhost:8000` in your browser.
 
-```
-python -m http.server
-```
-4. Open http://localhost:8000 in your browser.
+---
 
 ## 📝 Development History (Prompt Summary)
-This application was developed through an iterative process using a Large Language Model (Gemini). Below is a summary of the prompts and logic used to build it:
-1. **Initial Concept:** The user asked for help presenting footpad nociceptor innervation results (Control vs. CFA vs. Carrageenan) based on max intensity TIF files.
-2. **Data Processing:** We moved from image processing concepts to data analysis. The user provided an Excel file structure, and we wrote Python scripts to calculate averages and standard errors (SEM).
-3. **Statistical Integration:** The user requested statistical significance calculations. We implemented One-Way ANOVA and Tukey's HSD post-hoc tests.
-4. **GUI Creation:** The user requested a desktop GUI so they wouldn't have to edit code. We built a Tkinter app that accepted text files as inputs.
-5. **Web Conversion:** To make it shareable and accessible, we ported the logic to Streamlit, and finally to PyScript (HTML/JS) to allow it to run as a static website on GitHub Pages.
-6. **Design Refinement:** We iterated on the design multiple times:
-   * Moving from a vertical layout to a "Dashboard" layout (Sidebar inputs, Right-side graph).
-   * Fixing "Silent Crashes" by improving how JavaScript buttons trigger Python functions.
-   * Implementing a specific color palette (Light Blue & Grey).
-7. **Logic Pivot (Ratio Analysis):** The user changed the analytical approach from comparing raw indexes to comparing Left/Right Ratios. The code was rewritten to pair Left/Right files, calculate individual ratios, and perform an Unpaired T-Test.
-8. **Final Polish:** Added automatic "Significance Brackets" that draw physically on the graph if $p < 0.05$, ensuring the figure is publication-ready.
-   
-## 📂 Input Data Format
 
-The app accepts **.txt files**. It is designed to be robust and can handle various outputs from image analysis software (like FIJI/ImageJ).
+This tool was built through an iterative collaboration with Gemini. Below is the summary of the development stages:
 
-* **File Structure:** The app looks for the **last number** on every line of the text file.
-* **Recommendation:** Use one text file per paw, or one text file containing measurements for one specific side of one mouse.
-
-**Example content of a `.txt` file:**
-```text
-MAX_Image_01.tif    5.43
-MAX_Image_02.tif    4.22
-MAX_Image_03.tif    6.10
-
+1.  **Initial Logic:** Started with Python scripts to parse text files and calculate means/SEMs for innervation indexes.
+2.  **Web Conversion:** Ported the logic to **PyScript** to create a shareable, zero-install web tool hosted on GitHub Pages.
+3.  **UI Evolution:** Moved from a vertical layout to a "Dashboard" style with a sidebar for inputs and a main stage for results.
+4.  **Ratio Analysis Pivot:** Shifted the analytical focus from raw means to **Left/Right Ratios** to normalize baseline variability between mice.
+5.  **Publication Polish:**
+    * Added automatic **Significance Brackets** that physically draw on the plot.
+    * Added a **Raw Data Mode** to visualize every mouse side-by-side.
+    * Implemented **Smart Filename Parsing** so graph labels match the uploaded filenames.
+    * Added granular **Font Size Controls** to ensure the figures meet specific publication standards.
